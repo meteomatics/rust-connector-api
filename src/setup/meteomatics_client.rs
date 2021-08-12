@@ -1,12 +1,15 @@
 use reqwest::{Client, Response};
+use url::{ParseError, Url};
+
+const DEFAULT_API_BASE_URL: &str = "https://api.meteomatics.com";
 
 pub struct MeteomaticsClient {
     http_client: Client,
-    base_url: String,
     username: String,
     password: String,
 }
 
+#[allow(dead_code)]
 impl MeteomaticsClient {
     pub fn new(username: String, password: String) -> Self {
         let http_client = Client::builder()
@@ -15,14 +18,15 @@ impl MeteomaticsClient {
             .unwrap();
         Self {
             http_client,
-            base_url: "https://api.meteomatics.com/".to_string(),
             username,
             password,
         }
     }
 
-    pub async fn get(&self, path_fragment: String) -> Result<Response, reqwest::Error> {
-        let full_url = format!("{}{}", &self.base_url, path_fragment);
+    pub async fn do_http_get(&self, url_fragment: &str) -> Result<Response, reqwest::Error> {
+        let full_url = build_url(url_fragment)
+            .await
+            .expect("URL fragment must be valid");
         let response = self
             .http_client
             .get(full_url)
@@ -33,6 +37,12 @@ impl MeteomaticsClient {
     }
 }
 
+async fn build_url(url_fragment: &str) -> Result<Url, ParseError> {
+    let base_url = Url::parse(DEFAULT_API_BASE_URL).expect("Base URL is known to be valid");
+    let full_url = base_url.join(url_fragment)?;
+    Ok(full_url)
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -40,18 +50,25 @@ mod tests {
 
     #[tokio::test]
     async fn client_fires_get_request_to_base_url() {
-        let meteomatics_client = MeteomaticsClient::new("foo".to_string(), "bar".to_string());
+        // Change to correct username and password.
+        let meteomatics_client =
+            MeteomaticsClient::new("foo".to_string(), "bar".to_string());
 
         let response = meteomatics_client
-            .get("get_init_date?model=ecmwf-ifs&valid_date=2021-08-09T19:00:00ZP1D:PT6H&parameters=t_2m:C,relative_humidity_2m:p".to_string())
+            .do_http_get("get_init_date?model=ecmwf-ifs&valid_date=2021-08-12T19:00:00ZP1D:PT6H&parameters=t_2m:C,relative_humidity_2m:p")
             .await
             .unwrap();
 
         // println!("{:?}", response);
 
+        let status = format!("{}", response.status());
+        println!("Status: {}", status);
+        println!("Headers:\n{:#?}", response.headers());
+
         let body = response.text().await.unwrap();
         println!("Body:\n{}", body);
 
+        assert_eq!(status, "200 OK");
         assert_ne!(body, "");
     }
 }
