@@ -3,17 +3,17 @@ use url::{ParseError, Url};
 
 const DEFAULT_API_BASE_URL: &str = "https://api.meteomatics.com";
 
-pub struct MeteomaticsClient {
+#[derive(Clone, Debug)]
+pub struct APIClient {
     http_client: Client,
     username: String,
     password: String,
 }
 
-#[allow(dead_code)]
-impl MeteomaticsClient {
-    pub fn new(username: String, password: String) -> Self {
+impl APIClient {
+    pub fn new(username: String, password: String, timeout_seconds: u64) -> Self {
         let http_client = Client::builder()
-            .timeout(std::time::Duration::from_secs(10))
+            .timeout(std::time::Duration::from_secs(timeout_seconds))
             .build()
             .unwrap();
         Self {
@@ -46,20 +46,28 @@ async fn build_url(url_fragment: &str) -> Result<Url, ParseError> {
 #[cfg(test)]
 mod tests {
 
-    use crate::setup::meteomatics_client::MeteomaticsClient;
+    use crate::configuration::api_client::APIClient;
+    use crate::connector_components::format::Format;
 
     #[tokio::test]
     async fn client_fires_get_request_to_base_url() {
         // Change to correct username and password.
-        let meteomatics_client =
-            MeteomaticsClient::new("foo".to_string(), "bar".to_string());
+        let api_client = APIClient::new(
+            "python-community".to_string(),
+            "Umivipawe179".to_string(),
+            10,
+        );
+        println!("api_client: {:?}", api_client);
 
-        let response = meteomatics_client
-            .do_http_get("get_init_date?model=ecmwf-ifs&valid_date=2021-08-12T19:00:00ZP1D:PT6H&parameters=t_2m:C,relative_humidity_2m:p")
-            .await
-            .unwrap();
+        let url_fragment = &*format!(
+            "{}{}",
+            "2021-08-15T00:00:00Z/t_2m:C/52.520551,13.461804/".to_string(),
+            Format::CSV.to_string()
+        );
+        println!("url_fragment: {:?}", url_fragment);
 
-        // println!("{:?}", response);
+        let response = api_client.do_http_get(url_fragment).await.unwrap();
+        // println!("response: {:?}", response);
 
         let status = format!("{}", response.status());
         println!("Status: {}", status);
