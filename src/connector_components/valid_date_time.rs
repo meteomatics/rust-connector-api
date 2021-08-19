@@ -17,7 +17,6 @@ pub struct ValidDateTime {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[allow(dead_code)]
 pub enum PeriodDate {
     Years(i32),
     Months(i32),
@@ -25,7 +24,6 @@ pub enum PeriodDate {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[allow(dead_code)]
 pub enum PeriodTime {
     Hours(i32),
     Minutes(i32),
