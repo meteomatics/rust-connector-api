@@ -16,6 +16,7 @@ url = "2"
 strum = { version = "0.21", features = ["derive"] }
 strum_macros = "0.21"
 chrono = "0.4"
+derive_builder = "0.10"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
