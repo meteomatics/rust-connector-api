@@ -61,7 +61,7 @@ mod tests {
 
         let url_fragment = &*format!(
             "{}{}",
-            "2021-08-15T00:00:00Z/t_2m:C/52.520551,13.461804/".to_string(),
+            "2021-08-18T00:00:00Z/t_2m:C/52.520551,13.461804/".to_string(),
             Format::CSV.to_string()
         );
         println!("url_fragment: {:?}", url_fragment);

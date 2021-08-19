@@ -5,6 +5,11 @@ mod configuration;
 mod connector_components;
 mod entities;
 
+pub use crate::connector_components::*;
+
+#[macro_use]
+extern crate derive_builder;
+
 #[derive(Clone, Debug)]
 pub struct MeteomaticsConnector {
     api_client: APIClient,
