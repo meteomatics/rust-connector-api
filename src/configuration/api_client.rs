@@ -48,6 +48,7 @@ mod tests {
 
     use crate::configuration::api_client::APIClient;
     use crate::connector_components::format::Format;
+    use chrono::Local;
 
     #[tokio::test]
     async fn client_fires_get_request_to_base_url() {
@@ -59,9 +60,13 @@ mod tests {
         );
         println!("api_client: {:?}", api_client);
 
+        let now = Local::now();
+        println!("now (local) {:?}", now);
+
         let url_fragment = &*format!(
-            "{}{}",
-            "2021-08-18T00:00:00Z/t_2m:C/52.520551,13.461804/".to_string(),
+            "{}{}{}",
+            now.to_rfc3339(),
+            "/t_2m:C/52.520551,13.461804/",
             Format::CSV.to_string()
         );
         println!("url_fragment: {:?}", url_fragment);
