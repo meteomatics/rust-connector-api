@@ -1,16 +1,16 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone};
 use std::fmt::{Display, Formatter};
 
 #[derive(Builder, Clone, Debug, PartialEq)]
-pub struct ValidDateTime {
+pub struct ValidDateTime<Tz: TimeZone> {
     #[builder(setter(into))]
-    pub start_date_time: DateTime<Utc>,
+    pub start_date_time: DateTime<Tz>,
 
     #[builder(setter(strip_option), default)]
     pub period_date: Option<PeriodDate>,
 
     #[builder(setter(strip_option), default)]
-    pub end_date_time: Option<DateTime<Utc>>,
+    pub end_date_time: Option<DateTime<Tz>>,
 
     #[builder(setter(strip_option), default)]
     pub time_step: Option<PeriodTime>,
@@ -67,25 +67,26 @@ mod tests {
 
     use crate::connector_components::valid_date_time::ValidDateTimeBuilder;
     use crate::connector_components::valid_date_time::{PeriodDate, PeriodTime, ValidDateTime};
-    use chrono::{Duration, Utc};
+    use chrono::{Duration, Local, Utc};
 
     #[tokio::test]
     async fn call_new() {
+        // Use UTC.
         let start_date_time = Utc::now();
 
-        let vdt: ValidDateTime = ValidDateTimeBuilder::default()
+        let utc_vdt: ValidDateTime<Utc> = ValidDateTimeBuilder::default()
             .start_date_time(start_date_time)
             .build()
             .unwrap();
 
-        println!("call_new:");
-        println!("vdt.start_date_time: {:?}", vdt.start_date_time);
-        println!("vdt.period_date: {:?}", vdt.period_date);
-        println!("vdt.end_date_time: {:?}", vdt.end_date_time);
-        println!("vdt.time_step: {:?}", vdt.time_step);
+        println!("##### call_new (UTC):");
+        println!("utc_vdt.start_date_time: {:?}", utc_vdt.start_date_time);
+        println!("utc_vdt.period_date: {:?}", utc_vdt.period_date);
+        println!("utc_vdt.end_date_time: {:?}", utc_vdt.end_date_time);
+        println!("utc_vdt.time_step: {:?}", utc_vdt.time_step);
 
         assert_eq!(
-            vdt,
+            utc_vdt,
             ValidDateTime {
                 start_date_time,
                 period_date: None,
@@ -97,12 +98,13 @@ mod tests {
 
     #[tokio::test]
     async fn call_new_with_optional_params() {
-        let start_date_time = Utc::now();
+        // Use local time zone.
+        let start_date_time = Local::now();
         let period_date = PeriodDate::Days(1);
-        let end_date_time = start_date_time + Duration::days(1);
+        let end_date_time = start_date_time.clone() + Duration::days(1);
         let time_step = PeriodTime::Hours(1);
 
-        let vdt: ValidDateTime = ValidDateTimeBuilder::default()
+        let local_vdt: ValidDateTime<Local> = ValidDateTimeBuilder::default()
             .start_date_time(start_date_time)
             .period_date(period_date)
             .end_date_time(end_date_time)
@@ -110,26 +112,22 @@ mod tests {
             .build()
             .unwrap();
 
-        println!("call_new_with_optional_params:");
-        println!("vdt.start_date_time: {:?}", vdt.start_date_time);
-        println!("vdt.period_date: {}", vdt.period_date.unwrap());
-        println!("vdt.end_date_time: {:?}", vdt.end_date_time);
-        println!("vdt.time_step: {}", vdt.time_step.unwrap());
-
-        assert_eq!(
-            vdt,
-            ValidDateTime {
-                start_date_time,
-                period_date: Some(period_date),
-                end_date_time: Some(end_date_time),
-                time_step: Some(time_step)
-            }
+        println!("##### call_new_with_optional_params (local):");
+        println!("local_vdt.start_date_time: {:?}", local_vdt.start_date_time);
+        println!("local_vdt.period_date: {}", local_vdt.period_date.unwrap());
+        println!(
+            "local_vdt.end_date_time: {:?}",
+            local_vdt.end_date_time.unwrap()
         );
+        println!("local_vdt.time_step: {}", local_vdt.time_step.unwrap());
 
-        assert_eq!(vdt.period_date.unwrap(), PeriodDate::Days(1));
-        assert_eq!(vdt.time_step.unwrap(), PeriodTime::Hours(1));
+        assert_eq!(local_vdt.start_date_time, start_date_time);
+        assert_eq!(local_vdt.end_date_time.unwrap(), end_date_time);
 
-        assert_eq!(vdt.period_date.unwrap().to_string(), "P1D");
-        assert_eq!(vdt.time_step.unwrap().to_string(), "PT1H")
+        assert_eq!(local_vdt.period_date.unwrap(), PeriodDate::Days(1));
+        assert_eq!(local_vdt.time_step.unwrap(), PeriodTime::Hours(1));
+
+        assert_eq!(local_vdt.period_date.unwrap().to_string(), "P1D");
+        assert_eq!(local_vdt.time_step.unwrap().to_string(), "PT1H");
     }
 }
