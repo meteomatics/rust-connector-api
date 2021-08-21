@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 
-type OptionalMap = HashMap<String, String>;
+type OptionalSet = HashSet<String, String>;
 
 #[derive(Clone, Debug)]
 struct Optionals {
-    values: Vec<OptionalMap>,
+    values: Vec<OptionalSet>,
 }
 
 impl Optionals {}

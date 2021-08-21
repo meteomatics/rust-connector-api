@@ -1,8 +1,8 @@
 type Coordinate = String;
 
 #[derive(Clone, Debug)]
-struct Location {
+struct Locations {
     coordinates: Vec<Coordinate>,
 }
 
-impl Location {}
+impl Locations {}
