@@ -14,6 +14,9 @@ pub struct ValidDateTime<Tz: TimeZone> {
 
     #[builder(setter(strip_option), default)]
     pub time_step: Option<PeriodTime>,
+
+    #[builder(setter(strip_option), default)]
+    pub time_list: Option<Vec<DateTime<Tz>>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -33,15 +36,9 @@ pub enum PeriodTime {
 impl Display for PeriodDate {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            PeriodDate::Years(n) => {
-                write!(f, "P{}Y", n)
-            }
-            PeriodDate::Months(n) => {
-                write!(f, "P{}M", n)
-            }
-            PeriodDate::Days(n) => {
-                write!(f, "P{}D", n)
-            }
+            PeriodDate::Years(n) => write!(f, "P{}Y", n),
+            PeriodDate::Months(n) => write!(f, "P{}M", n),
+            PeriodDate::Days(n) => write!(f, "P{}D", n),
         }
     }
 }
@@ -49,15 +46,9 @@ impl Display for PeriodDate {
 impl Display for PeriodTime {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            PeriodTime::Hours(n) => {
-                write!(f, "PT{}H", n)
-            }
-            PeriodTime::Minutes(n) => {
-                write!(f, "PT{}M", n)
-            }
-            PeriodTime::Seconds(n) => {
-                write!(f, "PT{}S", n)
-            }
+            PeriodTime::Hours(n) => write!(f, "PT{}H", n),
+            PeriodTime::Minutes(n) => write!(f, "PT{}M", n),
+            PeriodTime::Seconds(n) => write!(f, "PT{}S", n),
         }
     }
 }
@@ -70,7 +61,7 @@ mod tests {
     use chrono::{Duration, Local, Utc};
 
     #[tokio::test]
-    async fn call_new() {
+    async fn create_with_default() {
         // Use UTC.
         let start_date_time = Utc::now();
 
@@ -91,24 +82,27 @@ mod tests {
                 start_date_time,
                 period_date: None,
                 end_date_time: None,
-                time_step: None
+                time_step: None,
+                time_list: None
             }
         );
     }
 
     #[tokio::test]
-    async fn call_new_with_optional_params() {
+    async fn create_with_optional_params() {
         // Use local time zone.
         let start_date_time = Local::now();
         let period_date = PeriodDate::Days(1);
         let end_date_time = start_date_time.clone() + Duration::days(1);
         let time_step = PeriodTime::Hours(1);
+        let time_list = vec![start_date_time, end_date_time];
 
         let local_vdt: ValidDateTime<Local> = ValidDateTimeBuilder::default()
             .start_date_time(start_date_time)
             .period_date(period_date)
             .end_date_time(end_date_time)
             .time_step(time_step)
+            .time_list(time_list)
             .build()
             .unwrap();
 
@@ -121,6 +115,9 @@ mod tests {
         );
         println!("local_vdt.time_step: {}", local_vdt.time_step.unwrap());
 
+        let tl = local_vdt.time_list.unwrap();
+        println!("local_vdt.time_list: {:?}", tl);
+
         assert_eq!(local_vdt.start_date_time, start_date_time);
         assert_eq!(local_vdt.end_date_time.unwrap(), end_date_time);
 
@@ -129,5 +126,8 @@ mod tests {
 
         assert_eq!(local_vdt.period_date.unwrap().to_string(), "P1D");
         assert_eq!(local_vdt.time_step.unwrap().to_string(), "PT1H");
+
+        assert_eq!(tl[0], start_date_time);
+        assert_eq!(tl[1], end_date_time);
     }
 }

@@ -9,6 +9,7 @@ pub use crate::connector_components::*;
 
 #[macro_use]
 extern crate derive_builder;
+extern crate linked_hash_set;
 
 #[derive(Clone, Debug)]
 pub struct MeteomaticsConnector {
