@@ -1,10 +1,70 @@
-use std::collections::HashSet;
+use linked_hash_set::LinkedHashSet;
+use std::fmt::{Display, Formatter};
 
-type OptionalSet = HashSet<String, String>;
-
-#[derive(Clone, Debug)]
-struct Optionals {
-    values: Vec<OptionalSet>,
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct Opt<'a> {
+    pub k: &'a str,
+    pub v: &'a str,
 }
 
-impl Optionals {}
+pub type OptSet<'a> = LinkedHashSet<Opt<'a>>;
+
+#[derive(Builder, Clone, Debug, PartialEq)]
+pub struct Optionals<'a> {
+    pub opt_values: OptSet<'a>,
+}
+
+impl<'a> Display for Opt<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.k.to_owned() + "=" + &*self.v.to_owned())
+    }
+}
+
+impl<'a> Display for Optionals<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let hs: LinkedHashSet<String> = self.opt_values.iter().map(|opt| opt.to_string()).collect();
+        write!(f, "{}", hs.into_iter().collect::<Vec<String>>().join("&"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::connector_components::optionals::{Opt, OptSet, Optionals, OptionalsBuilder};
+
+    #[tokio::test]
+    async fn with_values() {
+        let mut opt_values: OptSet<'_> = OptSet::new();
+        let opt1 = Opt {
+            k: "source",
+            v: "mix",
+        };
+        let opt2 = Opt {
+            k: "calibrated",
+            v: "true",
+        };
+        opt_values.insert(opt1);
+        opt_values.insert(opt2);
+
+        let optionals: Optionals = OptionalsBuilder::default()
+            .opt_values(opt_values)
+            .build()
+            .unwrap();
+
+        println!("##### with_values:");
+        println!("optionals: {}", optionals);
+
+        assert_eq!(optionals.to_string(), "source=mix&calibrated=true");
+
+        assert_ne!(
+            optionals.opt_values,
+            [Opt {
+                k: "source",
+                v: "mix"
+            }]
+            .iter()
+            .cloned()
+            .collect()
+        );
+    }
+}
