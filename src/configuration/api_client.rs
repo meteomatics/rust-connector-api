@@ -52,6 +52,8 @@ mod tests {
 
     #[tokio::test]
     async fn client_fires_get_request_to_base_url() {
+        println!("##### client_fires_get_request_to_base_url:");
+
         // Change to correct username and password.
         let api_client = APIClient::new(
             "python-community".to_string(),
