@@ -27,6 +27,9 @@ impl APIClient {
         let full_url = build_url(url_fragment)
             .await
             .expect("URL fragment must be valid");
+
+        println!(">>>>>>>>>> full_url: {}", full_url);
+
         let response = self
             .http_client
             .get(full_url)
