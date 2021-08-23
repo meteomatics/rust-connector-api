@@ -62,6 +62,8 @@ mod tests {
 
     #[tokio::test]
     async fn create_with_default() {
+        println!("##### create_with_default (UTC):");
+
         // Use UTC.
         let start_date_time = Utc::now();
 
@@ -70,7 +72,6 @@ mod tests {
             .build()
             .unwrap();
 
-        println!("##### call_new (UTC):");
         println!("utc_vdt.start_date_time: {:?}", utc_vdt.start_date_time);
         println!("utc_vdt.period_date: {:?}", utc_vdt.period_date);
         println!("utc_vdt.end_date_time: {:?}", utc_vdt.end_date_time);
@@ -90,6 +91,8 @@ mod tests {
 
     #[tokio::test]
     async fn create_with_optional_params() {
+        println!("##### create_with_optional_params (local):");
+
         // Use local time zone.
         let start_date_time = Local::now();
         let period_date = PeriodDate::Days(1);
@@ -106,7 +109,6 @@ mod tests {
             .build()
             .unwrap();
 
-        println!("##### call_new_with_optional_params (local):");
         println!("local_vdt.start_date_time: {:?}", local_vdt.start_date_time);
         println!("local_vdt.period_date: {}", local_vdt.period_date.unwrap());
         println!(

@@ -31,40 +31,36 @@ impl<'a> Display for Optionals<'a> {
 mod tests {
 
     use crate::connector_components::optionals::{Opt, OptSet, Optionals, OptionalsBuilder};
+    use std::iter::FromIterator;
 
     #[tokio::test]
     async fn with_values() {
-        let mut opt_values: OptSet<'_> = OptSet::new();
-        let opt1 = Opt {
-            k: "source",
-            v: "mix",
-        };
-        let opt2 = Opt {
-            k: "calibrated",
-            v: "true",
-        };
-        opt_values.insert(opt1);
-        opt_values.insert(opt2);
+        println!("##### with_values:");
+
+        let opt_values: OptSet<'_> = OptSet::from_iter([
+            Opt {
+                k: "source",
+                v: "mix",
+            },
+            Opt {
+                k: "calibrated",
+                v: "true",
+            },
+        ]);
 
         let optionals: Optionals = OptionalsBuilder::default()
             .opt_values(opt_values)
             .build()
             .unwrap();
 
-        println!("##### with_values:");
         println!("optionals: {}", optionals);
-
         assert_eq!(optionals.to_string(), "source=mix&calibrated=true");
-
         assert_ne!(
             optionals.opt_values,
-            [Opt {
+            OptSet::from_iter([Opt {
                 k: "source",
                 v: "mix"
-            }]
-            .iter()
-            .cloned()
-            .collect()
+            }])
         );
     }
 }
