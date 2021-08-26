@@ -37,8 +37,7 @@ impl<'a> Display for Parameters<'a> {
 #[cfg(test)]
 mod tests {
 
-    use crate::connector_components::parameters::{PSet, ParametersBuilder};
-    use crate::connector_components::parameters::{Parameters, P};
+    use crate::parameters::{PSet, Parameters, ParametersBuilder, P};
     use std::iter::FromIterator;
 
     #[tokio::test]

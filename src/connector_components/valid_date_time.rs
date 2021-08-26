@@ -1,22 +1,29 @@
-use chrono::{DateTime, TimeZone};
+use chrono::{DateTime, FixedOffset, Local, Utc};
 use std::fmt::{Display, Formatter};
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum VDTOffset {
+    Utc(DateTime<Utc>),
+    Local(DateTime<Local>),
+    FixedOffset(DateTime<FixedOffset>),
+}
+
 #[derive(Builder, Clone, Debug, PartialEq)]
-pub struct ValidDateTime<Tz: TimeZone> {
+pub struct ValidDateTime {
     #[builder(setter(into))]
-    pub start_date_time: DateTime<Tz>,
+    pub start_date_time: VDTOffset,
 
     #[builder(setter(strip_option), default)]
     pub period_date: Option<PeriodDate>,
 
     #[builder(setter(strip_option), default)]
-    pub end_date_time: Option<DateTime<Tz>>,
+    pub end_date_time: Option<VDTOffset>,
 
     #[builder(setter(strip_option), default)]
     pub time_step: Option<PeriodTime>,
 
     #[builder(setter(strip_option), default)]
-    pub time_list: Option<Vec<DateTime<Tz>>>,
+    pub time_list: Option<Vec<VDTOffset>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -31,6 +38,16 @@ pub enum PeriodTime {
     Hours(i32),
     Minutes(i32),
     Seconds(i32),
+}
+
+impl Display for VDTOffset {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VDTOffset::Utc(dt) => write!(f, "{}", dt.to_rfc3339()),
+            VDTOffset::Local(dt) => write!(f, "{}", dt.to_rfc3339()),
+            VDTOffset::FixedOffset(dt) => write!(f, "{}", dt.to_rfc3339()),
+        }
+    }
 }
 
 impl Display for PeriodDate {
@@ -56,8 +73,9 @@ impl Display for PeriodTime {
 #[cfg(test)]
 mod tests {
 
-    use crate::connector_components::valid_date_time::ValidDateTimeBuilder;
-    use crate::connector_components::valid_date_time::{PeriodDate, PeriodTime, ValidDateTime};
+    use crate::valid_date_time::{
+        PeriodDate, PeriodTime, VDTOffset, ValidDateTime, ValidDateTimeBuilder,
+    };
     use chrono::{Duration, Local, Utc};
 
     #[tokio::test]
@@ -65,14 +83,15 @@ mod tests {
         println!("##### create_with_default (UTC):");
 
         // Use UTC.
-        let start_date_time = Utc::now();
+        let start_date_time = VDTOffset::Utc(Utc::now());
 
-        let utc_vdt: ValidDateTime<Utc> = ValidDateTimeBuilder::default()
+        let utc_vdt: ValidDateTime = ValidDateTimeBuilder::default()
             .start_date_time(start_date_time)
             .build()
             .unwrap();
 
         println!("utc_vdt.start_date_time: {:?}", utc_vdt.start_date_time);
+        println!("utc_vdt.start_date_time: {}", utc_vdt.start_date_time);
         println!("utc_vdt.period_date: {:?}", utc_vdt.period_date);
         println!("utc_vdt.end_date_time: {:?}", utc_vdt.end_date_time);
         println!("utc_vdt.time_step: {:?}", utc_vdt.time_step);
@@ -98,21 +117,28 @@ mod tests {
         let period_date = PeriodDate::Days(1);
         let end_date_time = start_date_time.clone() + Duration::days(1);
         let time_step = PeriodTime::Hours(1);
-        let time_list = vec![start_date_time, end_date_time];
+        let start_vdt_offset = VDTOffset::Local(start_date_time);
+        let end_vdt_offset = VDTOffset::Local(end_date_time);
+        let time_list = vec![start_vdt_offset, end_vdt_offset];
 
-        let local_vdt: ValidDateTime<Local> = ValidDateTimeBuilder::default()
-            .start_date_time(start_date_time)
+        let local_vdt: ValidDateTime = ValidDateTimeBuilder::default()
+            .start_date_time(start_vdt_offset)
             .period_date(period_date)
-            .end_date_time(end_date_time)
+            .end_date_time(end_vdt_offset)
             .time_step(time_step)
             .time_list(time_list)
             .build()
             .unwrap();
 
         println!("local_vdt.start_date_time: {:?}", local_vdt.start_date_time);
+        println!("local_vdt.start_date_time: {}", local_vdt.start_date_time);
         println!("local_vdt.period_date: {}", local_vdt.period_date.unwrap());
         println!(
             "local_vdt.end_date_time: {:?}",
+            local_vdt.end_date_time.unwrap()
+        );
+        println!(
+            "local_vdt.end_date_time: {}",
             local_vdt.end_date_time.unwrap()
         );
         println!("local_vdt.time_step: {}", local_vdt.time_step.unwrap());
@@ -120,8 +146,8 @@ mod tests {
         let tl = local_vdt.time_list.unwrap();
         println!("local_vdt.time_list: {:?}", tl);
 
-        assert_eq!(local_vdt.start_date_time, start_date_time);
-        assert_eq!(local_vdt.end_date_time.unwrap(), end_date_time);
+        assert_eq!(local_vdt.start_date_time, start_vdt_offset);
+        assert_eq!(local_vdt.end_date_time.unwrap(), end_vdt_offset);
 
         assert_eq!(local_vdt.period_date.unwrap(), PeriodDate::Days(1));
         assert_eq!(local_vdt.time_step.unwrap(), PeriodTime::Hours(1));
@@ -129,7 +155,7 @@ mod tests {
         assert_eq!(local_vdt.period_date.unwrap().to_string(), "P1D");
         assert_eq!(local_vdt.time_step.unwrap().to_string(), "PT1H");
 
-        assert_eq!(tl[0], start_date_time);
-        assert_eq!(tl[1], end_date_time);
+        assert_eq!(tl[0], start_vdt_offset);
+        assert_eq!(tl[1], end_vdt_offset);
     }
 }
