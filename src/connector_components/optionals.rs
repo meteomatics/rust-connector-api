@@ -30,7 +30,7 @@ impl<'a> Display for Optionals<'a> {
 #[cfg(test)]
 mod tests {
 
-    use crate::connector_components::optionals::{Opt, OptSet, Optionals, OptionalsBuilder};
+    use crate::optionals::{Opt, OptSet, Optionals, OptionalsBuilder};
     use std::iter::FromIterator;
 
     #[tokio::test]

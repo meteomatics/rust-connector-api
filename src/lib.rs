@@ -12,7 +12,6 @@ use crate::locations::Locations;
 use crate::optionals::Optionals;
 use crate::parameters::Parameters;
 use crate::valid_date_time::ValidDateTime;
-use chrono::Utc;
 
 #[macro_use]
 extern crate derive_builder;
@@ -32,15 +31,15 @@ impl MeteomaticsConnector {
 
     pub async fn query_time_series(
         &self,
-        vdt: ValidDateTime<Utc>,
+        vdt: ValidDateTime,
         parameters: Parameters<'_>,
         locations: Locations<'_>,
         optionals: Optionals<'_>,
     ) -> Result<Response, reqwest::Error> {
         let url_fragment = format!(
             "{}--{}/{}/{}/{}?{}",
-            vdt.start_date_time.to_rfc3339(),
-            vdt.end_date_time.unwrap().to_rfc3339(),
+            vdt.start_date_time,
+            vdt.end_date_time.unwrap(),
             parameters,
             locations,
             Format::CSV.to_string(),
@@ -55,16 +54,17 @@ impl MeteomaticsConnector {
 mod tests {
 
     use crate::locations::{Coordinates, Locations, LocationsBuilder};
-    use crate::optionals::OptionalsBuilder;
-    use crate::optionals::{Opt, OptSet, Optionals};
+    use crate::optionals::{Opt, OptSet, Optionals, OptionalsBuilder};
     use crate::parameters::{PSet, Parameters, ParametersBuilder, P};
-    use crate::valid_date_time::{ValidDateTime, ValidDateTimeBuilder};
+    use crate::valid_date_time::{VDTOffset, ValidDateTime, ValidDateTimeBuilder};
     use crate::MeteomaticsConnector;
     use chrono::{Duration, Utc};
     use std::iter::FromIterator;
 
     #[tokio::test]
     async fn call_query_time_series() {
+        println!("##### call_query_time_series:");
+
         let meteomatics_connector = MeteomaticsConnector::new(
             "python-community".to_string(),
             "Umivipawe179".to_string(),
@@ -72,8 +72,10 @@ mod tests {
         );
 
         let now = Utc::now();
-        let yesterday = now.clone() - Duration::days(1);
-        let utc_vdt: ValidDateTime<Utc> = ValidDateTimeBuilder::default()
+        let yesterday = VDTOffset::Utc(now.clone() - Duration::days(1));
+        let now = VDTOffset::Utc(now);
+
+        let utc_vdt: ValidDateTime = ValidDateTimeBuilder::default()
             .start_date_time(yesterday)
             .end_date_time(now)
             .build()
