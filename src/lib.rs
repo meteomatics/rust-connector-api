@@ -7,7 +7,6 @@ mod entities;
 
 pub use crate::connector_components::*;
 
-use crate::format::Format;
 use crate::locations::Locations;
 use crate::optionals::Optionals;
 use crate::parameters::Parameters;
@@ -15,7 +14,6 @@ use crate::valid_date_time::ValidDateTime;
 
 #[macro_use]
 extern crate derive_builder;
-extern crate linked_hash_set;
 
 #[derive(Clone, Debug)]
 pub struct MeteomaticsConnector {
@@ -34,18 +32,12 @@ impl MeteomaticsConnector {
         vdt: ValidDateTime,
         parameters: Parameters<'_>,
         locations: Locations<'_>,
-        optionals: Optionals<'_>,
+        optionals: Option<Optionals<'_>>,
     ) -> Result<Response, reqwest::Error> {
-        let url_fragment = format!(
-            "{}--{}/{}/{}/{}?{}",
-            vdt.start_date_time,
-            vdt.end_date_time.unwrap(),
-            parameters,
-            locations,
-            Format::CSV.to_string(),
-            optionals
-        );
-        let response = self.api_client.do_http_get(url_fragment.as_str()).await?;
+        let response = self
+            .api_client
+            .query_time_series(vdt, parameters, locations, optionals)
+            .await?;
         Ok(response)
     }
 }
@@ -62,8 +54,8 @@ mod tests {
     use std::iter::FromIterator;
 
     #[tokio::test]
-    async fn call_query_time_series() {
-        println!("##### call_query_time_series:");
+    async fn call_query_time_series_with_options() {
+        println!("##### call_query_time_series_with_options:");
 
         let meteomatics_connector = MeteomaticsConnector::new(
             "python-community".to_string(),
@@ -117,8 +109,67 @@ mod tests {
             .build()
             .unwrap();
 
+        // Call endpoint
         let response = meteomatics_connector
-            .query_time_series(utc_vdt, parameters, locations, optionals)
+            .query_time_series(utc_vdt, parameters, locations, Option::from(optionals))
+            .await
+            .unwrap();
+
+        let status = format!("{}", response.status());
+        println!("Status: {}", status);
+        println!("Headers:\n{:#?}", response.headers());
+
+        let body = response.text().await.unwrap();
+        println!("Body:\n{}", body);
+
+        assert_eq!(status, "200 OK");
+        assert_ne!(body, "");
+    }
+
+    #[tokio::test]
+    async fn call_query_time_series_without_options() {
+        println!("##### call_query_time_series_without_options:");
+
+        let meteomatics_connector = MeteomaticsConnector::new(
+            "python-community".to_string(),
+            "Umivipawe179".to_string(),
+            10,
+        );
+
+        let now = Utc::now();
+        let yesterday = VDTOffset::Utc(now.clone() - Duration::days(1));
+        let now = VDTOffset::Utc(now);
+
+        let utc_vdt: ValidDateTime = ValidDateTimeBuilder::default()
+            .start_date_time(yesterday)
+            .end_date_time(now)
+            .build()
+            .unwrap();
+
+        let p_values: PSet<'_> = PSet::from_iter([
+            P {
+                k: "t_2m",
+                v: Some("C"),
+            },
+            P {
+                k: "precip_1h",
+                v: Some("mm"),
+            },
+        ]);
+        let parameters: Parameters = ParametersBuilder::default()
+            .p_values(p_values)
+            .build()
+            .unwrap();
+
+        let coordinates = Coordinates::from(["47.419708", "9.358478"]);
+        let locations: Locations = LocationsBuilder::default()
+            .coordinates(coordinates)
+            .build()
+            .unwrap();
+
+        // Call endpoint
+        let response = meteomatics_connector
+            .query_time_series(utc_vdt, parameters, locations, None)
             .await
             .unwrap();
 
