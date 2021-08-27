@@ -1,4 +1,3 @@
-use linked_hash_set::LinkedHashSet;
 use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -7,7 +6,7 @@ pub struct P<'a> {
     pub v: Option<&'a str>,
 }
 
-pub type PSet<'a> = LinkedHashSet<P<'a>>;
+pub type PSet<'a> = Vec<P<'a>>;
 
 #[derive(Builder, Clone, Debug, PartialEq)]
 pub struct Parameters<'a> {
@@ -29,8 +28,15 @@ impl<'a> Display for P<'a> {
 
 impl<'a> Display for Parameters<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let hs: LinkedHashSet<String> = self.p_values.iter().map(|p| p.to_string()).collect();
-        write!(f, "{}", hs.into_iter().collect::<Vec<String>>().join(","))
+        write!(
+            f,
+            "{}",
+            self.p_values
+                .iter()
+                .map(|p| p.to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+        )
     }
 }
 
@@ -84,8 +90,8 @@ mod tests {
             k: "wind_speed_10m",
             v: None,
         };
-        p_values.insert(p1);
-        p_values.insert(p2);
+        p_values.push(p1);
+        p_values.push(p2);
 
         let params: Parameters = ParametersBuilder::default()
             .p_values(p_values)

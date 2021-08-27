@@ -1,4 +1,3 @@
-use linked_hash_set::LinkedHashSet;
 use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -7,7 +6,7 @@ pub struct Opt<'a> {
     pub v: &'a str,
 }
 
-pub type OptSet<'a> = LinkedHashSet<Opt<'a>>;
+pub type OptSet<'a> = Vec<Opt<'a>>;
 
 #[derive(Builder, Clone, Debug, PartialEq)]
 pub struct Optionals<'a> {
@@ -22,8 +21,15 @@ impl<'a> Display for Opt<'a> {
 
 impl<'a> Display for Optionals<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let hs: LinkedHashSet<String> = self.opt_values.iter().map(|opt| opt.to_string()).collect();
-        write!(f, "{}", hs.into_iter().collect::<Vec<String>>().join("&"))
+        write!(
+            f,
+            "{}",
+            self.opt_values
+                .iter()
+                .map(|opt| opt.to_string())
+                .collect::<Vec<String>>()
+                .join("&")
+        )
     }
 }
 

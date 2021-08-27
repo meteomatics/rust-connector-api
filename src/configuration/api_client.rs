@@ -1,3 +1,8 @@
+use crate::format::Format;
+use crate::locations::Locations;
+use crate::optionals::Optionals;
+use crate::parameters::Parameters;
+use crate::valid_date_time::ValidDateTime;
 use reqwest::{Client, Response};
 use url::{ParseError, Url};
 
@@ -23,7 +28,41 @@ impl APIClient {
         }
     }
 
-    pub async fn do_http_get(&self, url_fragment: &str) -> Result<Response, reqwest::Error> {
+    pub async fn query_time_series(
+        &self,
+        vdt: ValidDateTime,
+        parameters: Parameters<'_>,
+        locations: Locations<'_>,
+        optionals: Option<Optionals<'_>>,
+    ) -> Result<Response, reqwest::Error> {
+        let url_fragment = match optionals {
+            None => {
+                format!(
+                    "{}--{}/{}/{}/{}",
+                    vdt.start_date_time,
+                    vdt.end_date_time.unwrap(),
+                    parameters,
+                    locations,
+                    Format::CSV.to_string()
+                )
+            }
+            Some(_) => {
+                format!(
+                    "{}--{}/{}/{}/{}?{}",
+                    vdt.start_date_time,
+                    vdt.end_date_time.unwrap(),
+                    parameters,
+                    locations,
+                    Format::CSV.to_string(),
+                    optionals.unwrap()
+                )
+            }
+        };
+        let response = self.do_http_get(url_fragment.as_str()).await?;
+        Ok(response)
+    }
+
+    async fn do_http_get(&self, url_fragment: &str) -> Result<Response, reqwest::Error> {
         let full_url = build_url(url_fragment)
             .await
             .expect("URL fragment must be valid");
