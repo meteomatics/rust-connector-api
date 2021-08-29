@@ -1,12 +1,12 @@
-use crate::configuration::api_client::APIClient;
-use reqwest::Response;
-
 mod configuration;
 mod connector_components;
 mod entities;
 
 pub use crate::connector_components::*;
+pub use crate::entities::*;
 
+use crate::configuration::api_client::APIClient;
+use crate::connector_response::ConnectorResponse;
 use crate::locations::Locations;
 use crate::optionals::Optionals;
 use crate::parameters::Parameters;
@@ -33,7 +33,7 @@ impl MeteomaticsConnector {
         parameters: Parameters<'_>,
         locations: Locations<'_>,
         optionals: Option<Optionals<'_>>,
-    ) -> Result<Response, reqwest::Error> {
+    ) -> Result<ConnectorResponse, reqwest::Error> {
         let response = self
             .api_client
             .query_time_series(vdt, parameters, locations, optionals)
@@ -45,6 +45,7 @@ impl MeteomaticsConnector {
 #[cfg(test)]
 mod tests {
 
+    use crate::connector_response::CSVBody;
     use crate::locations::{Coordinates, Locations};
     use crate::optionals::{Opt, OptSet, Optionals};
     use crate::parameters::{PSet, Parameters, P};
@@ -113,15 +114,17 @@ mod tests {
             .await
             .unwrap();
 
-        let status = format!("{}", response.status());
-        println!(">>>>>>>>>> Status: {}", status);
-        println!(">>>>>>>>>> Headers:\n{:#?}", response.headers());
+        println!(">>>>>>>>>> CSV body:\n{}", response.body);
 
-        let body = response.text().await.unwrap();
-        println!(">>>>>>>>>> Body:\n{}", body);
+        assert_eq!(response.http_status, "200 OK");
 
-        assert_eq!(status, "200 OK");
-        assert_ne!(body, "");
+        assert_ne!(
+            response.body,
+            CSVBody {
+                csv_headers: vec![],
+                csv_records: vec![]
+            }
+        );
     }
 
     #[tokio::test]
@@ -170,14 +173,9 @@ mod tests {
             .await
             .unwrap();
 
-        let status = format!("{}", response.status());
-        println!(">>>>>>>>>> Status: {}", status);
-        println!(">>>>>>>>>> Headers:\n{:#?}", response.headers());
+        println!(">>>>>>>>>> CSV body:\n{}", response.body);
 
-        let body = response.text().await.unwrap();
-        println!(">>>>>>>>>> Body:\n{}", body);
-
-        assert_eq!(status, "200 OK");
-        assert_ne!(body, "");
+        assert_eq!(response.http_status, "200 OK");
+        assert_ne!(response.body.to_string(), "");
     }
 }

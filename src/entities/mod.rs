@@ -1,2 +1,2 @@
-mod connector_error;
-mod connector_response;
+pub mod connector_error;
+pub mod connector_response;
