@@ -102,10 +102,10 @@ mod tests {
             "Umivipawe179".to_string(),
             10,
         );
-        println!("api_client: {:?}", api_client);
+        println!(">>>>>>>>>> api_client: {:?}", api_client);
 
         let now = Local::now();
-        println!("now (local) {:?}", now);
+        println!(">>>>>>>>>> now (local) {:?}", now);
 
         let url_fragment = &*format!(
             "{}{}{}",
@@ -113,17 +113,17 @@ mod tests {
             "/t_2m:C/52.520551,13.461804/",
             Format::CSV.to_string()
         );
-        println!("url_fragment: {:?}", url_fragment);
+        println!(">>>>>>>>>> url_fragment: {:?}", url_fragment);
 
         let response = api_client.do_http_get(url_fragment).await.unwrap();
         // println!("response: {:?}", response);
 
         let status = format!("{}", response.status());
-        println!("Status: {}", status);
-        println!("Headers:\n{:#?}", response.headers());
+        println!(">>>>>>>>>> Status: {}", status);
+        println!(">>>>>>>>>> Headers:\n{:#?}", response.headers());
 
         let body = response.text().await.unwrap();
-        println!("Body:\n{}", body);
+        println!(">>>>>>>>>> Body:\n{}", body);
 
         assert_eq!(status, "200 OK");
         assert_ne!(body, "");

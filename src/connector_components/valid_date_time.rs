@@ -90,11 +90,11 @@ mod tests {
             .build()
             .unwrap();
 
-        println!("utc_vdt.start_date_time: {:?}", utc_vdt.start_date_time);
-        println!("utc_vdt.start_date_time: {}", utc_vdt.start_date_time);
-        println!("utc_vdt.period_date: {:?}", utc_vdt.period_date);
-        println!("utc_vdt.end_date_time: {:?}", utc_vdt.end_date_time);
-        println!("utc_vdt.time_step: {:?}", utc_vdt.time_step);
+        println!(">>>>>>>>>> utc_vdt.start_date_time: {:?}", utc_vdt.start_date_time);
+        println!(">>>>>>>>>> utc_vdt.start_date_time: {}", utc_vdt.start_date_time);
+        println!(">>>>>>>>>> utc_vdt.period_date: {:?}", utc_vdt.period_date);
+        println!(">>>>>>>>>> utc_vdt.end_date_time: {:?}", utc_vdt.end_date_time);
+        println!(">>>>>>>>>> utc_vdt.time_step: {:?}", utc_vdt.time_step);
 
         assert_eq!(
             utc_vdt,
@@ -130,21 +130,21 @@ mod tests {
             .build()
             .unwrap();
 
-        println!("local_vdt.start_date_time: {:?}", local_vdt.start_date_time);
-        println!("local_vdt.start_date_time: {}", local_vdt.start_date_time);
-        println!("local_vdt.period_date: {}", local_vdt.period_date.unwrap());
+        println!(">>>>>>>>>> local_vdt.start_date_time: {:?}", local_vdt.start_date_time);
+        println!(">>>>>>>>>> local_vdt.start_date_time: {}", local_vdt.start_date_time);
+        println!(">>>>>>>>>> local_vdt.period_date: {}", local_vdt.period_date.unwrap());
         println!(
-            "local_vdt.end_date_time: {:?}",
+            ">>>>>>>>>> local_vdt.end_date_time: {:?}",
             local_vdt.end_date_time.unwrap()
         );
         println!(
-            "local_vdt.end_date_time: {}",
+            ">>>>>>>>>> local_vdt.end_date_time: {}",
             local_vdt.end_date_time.unwrap()
         );
-        println!("local_vdt.time_step: {}", local_vdt.time_step.unwrap());
+        println!(">>>>>>>>>> local_vdt.time_step: {}", local_vdt.time_step.unwrap());
 
         let tl = local_vdt.time_list.unwrap();
-        println!("local_vdt.time_list: {:?}", tl);
+        println!(">>>>>>>>>> local_vdt.time_list: {:?}", tl);
 
         assert_eq!(local_vdt.start_date_time, start_vdt_offset);
         assert_eq!(local_vdt.end_date_time.unwrap(), end_vdt_offset);

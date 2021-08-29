@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 pub type Coordinates<'a> = Vec<&'a str>;
 
-#[derive(Builder, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Locations<'a> {
     pub coordinates: Coordinates<'a>,
 }
@@ -16,7 +16,7 @@ impl<'a> Display for Locations<'a> {
 #[cfg(test)]
 mod tests {
 
-    use crate::locations::{Coordinates, Locations, LocationsBuilder};
+    use crate::locations::{Coordinates, Locations};
 
     #[tokio::test]
     async fn with_some_values() {
@@ -24,50 +24,43 @@ mod tests {
 
         // Single point
         let coordinates = Coordinates::from(["47.419708", "9.358478"]);
-        let locations: Locations = LocationsBuilder::default()
-            .coordinates(coordinates)
-            .build()
-            .unwrap();
+        let locations: Locations = Locations { coordinates };
 
-        println!("single_point_loc: {}", locations);
+        println!(">>>>>>>>>> single_point_loc: {}", locations);
         assert_eq!(locations.to_string(), "47.419708,9.358478");
 
         // Point list
-        let coordinates = Coordinates::from(["47.41", "9.35+47.51", "8.74+47.13", "8.22"]);
-        let locations: Locations = LocationsBuilder::default()
-            .coordinates(coordinates)
-            .build()
-            .unwrap();
+        let locations: Locations = Locations {
+            coordinates: Coordinates::from(["47.41", "9.35+47.51", "8.74+47.13", "8.22"]),
+        };
 
-        println!("point_list_loc: {}", locations);
+        println!(">>>>>>>>>> point_list_loc: {}", locations);
         assert_eq!(locations.to_string(), "47.41,9.35+47.51,8.74+47.13,8.22");
 
         // Postal codes
-        let coordinates = Coordinates::from([
-            "postal_CH9014",
-            "postal_CH9000",
-            "postal_US10001",
-            "postal_GBW2",
-        ]);
-        let locations: Locations = LocationsBuilder::default()
-            .coordinates(coordinates)
-            .build()
-            .unwrap();
+        let locations: Locations = Locations {
+            coordinates: Coordinates::from([
+                "postal_CH9014",
+                "postal_CH9000",
+                "postal_US10001",
+                "postal_GBW2",
+            ]),
+        };
 
-        println!("postal_codes_loc: {}", locations);
+        println!(">>>>>>>>>> postal_codes_loc: {}", locations);
+
         assert_eq!(
             locations.to_string(),
             "postal_CH9014,postal_CH9000,postal_US10001,postal_GBW2"
         );
 
         // Line
-        let coordinates = Coordinates::from(["50", "10_50", "20:100"]);
-        let locations: Locations = LocationsBuilder::default()
-            .coordinates(coordinates)
-            .build()
-            .unwrap();
+        let locations: Locations = Locations {
+            coordinates: Coordinates::from(["50", "10_50", "20:100"]),
+        };
 
-        println!("line_loc: {}", locations);
+        println!(">>>>>>>>>> line_loc: {}", locations);
+
         assert_eq!(locations.to_string(), "50,10_50,20:100");
     }
 }
