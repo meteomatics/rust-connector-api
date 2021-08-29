@@ -8,7 +8,7 @@ pub struct P<'a> {
 
 pub type PSet<'a> = Vec<P<'a>>;
 
-#[derive(Builder, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Parameters<'a> {
     pub p_values: PSet<'a>,
 }
@@ -43,31 +43,30 @@ impl<'a> Display for Parameters<'a> {
 #[cfg(test)]
 mod tests {
 
-    use crate::parameters::{PSet, Parameters, ParametersBuilder, P};
+    use crate::parameters::{PSet, Parameters, P};
     use std::iter::FromIterator;
 
     #[tokio::test]
     async fn with_some_values() {
         println!("##### with_some_values:");
 
-        let p_values: PSet<'_> = PSet::from_iter([
-            P {
-                k: "t_2m",
-                v: Some("C"),
-            },
-            P {
-                k: "precip_1h",
-                v: Some("mm"),
-            },
-        ]);
+        let params: Parameters = Parameters {
+            p_values: PSet::from_iter([
+                P {
+                    k: "t_2m",
+                    v: Some("C"),
+                },
+                P {
+                    k: "precip_1h",
+                    v: Some("mm"),
+                },
+            ]),
+        };
 
-        let params: Parameters = ParametersBuilder::default()
-            .p_values(p_values)
-            .build()
-            .unwrap();
+        println!(">>>>>>>>>> params: {}", params);
 
-        println!("params: {}", params);
         assert_eq!(params.to_string(), "t_2m:C,precip_1h:mm");
+
         assert_ne!(
             params.p_values,
             PSet::from_iter([P {
@@ -93,13 +92,12 @@ mod tests {
         p_values.push(p1);
         p_values.push(p2);
 
-        let params: Parameters = ParametersBuilder::default()
-            .p_values(p_values)
-            .build()
-            .unwrap();
+        let params: Parameters = Parameters { p_values };
 
-        println!("params: {}", params);
+        println!(">>>>>>>>>> params: {}", params);
+
         assert_eq!(params.to_string(), "precip_1h:mm,wind_speed_10m");
+
         assert_eq!(
             params.p_values,
             PSet::from_iter([

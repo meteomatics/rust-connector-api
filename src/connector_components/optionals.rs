@@ -8,7 +8,7 @@ pub struct Opt<'a> {
 
 pub type OptSet<'a> = Vec<Opt<'a>>;
 
-#[derive(Builder, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Optionals<'a> {
     pub opt_values: OptSet<'a>,
 }
@@ -36,31 +36,30 @@ impl<'a> Display for Optionals<'a> {
 #[cfg(test)]
 mod tests {
 
-    use crate::optionals::{Opt, OptSet, Optionals, OptionalsBuilder};
+    use crate::optionals::{Opt, OptSet, Optionals};
     use std::iter::FromIterator;
 
     #[tokio::test]
     async fn with_values() {
         println!("##### with_values:");
 
-        let opt_values: OptSet<'_> = OptSet::from_iter([
-            Opt {
-                k: "source",
-                v: "mix",
-            },
-            Opt {
-                k: "calibrated",
-                v: "true",
-            },
-        ]);
+        let optionals: Optionals = Optionals {
+            opt_values: OptSet::from_iter([
+                Opt {
+                    k: "source",
+                    v: "mix",
+                },
+                Opt {
+                    k: "calibrated",
+                    v: "true",
+                },
+            ]),
+        };
 
-        let optionals: Optionals = OptionalsBuilder::default()
-            .opt_values(opt_values)
-            .build()
-            .unwrap();
+        println!(">>>>>>>>>> optionals: {}", optionals);
 
-        println!("optionals: {}", optionals);
         assert_eq!(optionals.to_string(), "source=mix&calibrated=true");
+
         assert_ne!(
             optionals.opt_values,
             OptSet::from_iter([Opt {
