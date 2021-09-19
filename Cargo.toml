@@ -17,6 +17,7 @@ strum = { version = "0.21", features = ["derive"] }
 strum_macros = "0.21"
 chrono = "0.4"
 derive_builder = "0.10"
+thiserror = "1.0"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }

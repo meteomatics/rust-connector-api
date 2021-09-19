@@ -1,4 +1,3 @@
-use crate::connector_error::ConnectorError;
 use csv::Reader;
 use std::io::Read;
 
@@ -6,7 +5,6 @@ use std::io::Read;
 pub struct ConnectorResponse {
     pub body: CSVBody,
     pub http_status: String,
-    pub error: ConnectorError,
 }
 
 pub type CSVHeader = Vec<String>;

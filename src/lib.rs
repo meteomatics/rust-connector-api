@@ -6,6 +6,7 @@ pub use crate::connector_components::*;
 pub use crate::entities::*;
 
 use crate::configuration::api_client::APIClient;
+use crate::connector_error::ConnectorError;
 use crate::connector_response::ConnectorResponse;
 use crate::locations::Locations;
 use crate::optionals::Optionals;
@@ -33,12 +34,10 @@ impl MeteomaticsConnector {
         parameters: Parameters<'_>,
         locations: Locations<'_>,
         optionals: Option<Optionals<'_>>,
-    ) -> Result<ConnectorResponse, reqwest::Error> {
-        let response = self
-            .api_client
+    ) -> Result<ConnectorResponse, ConnectorError> {
+        self.api_client
             .query_time_series(vdt, parameters, locations, optionals)
-            .await?;
-        Ok(response)
+            .await
     }
 }
 
@@ -109,22 +108,26 @@ mod tests {
         };
 
         // Call endpoint
-        let response = meteomatics_connector
+        let result = meteomatics_connector
             .query_time_series(utc_vdt, parameters, locations, Option::from(optionals))
-            .await
-            .unwrap();
+            .await;
 
-        println!(">>>>>>>>>> CSV body:\n{}", response.body);
-
-        assert_eq!(response.http_status, "200 OK");
-
-        assert_ne!(
-            response.body,
-            CSVBody {
-                csv_headers: vec![],
-                csv_records: vec![]
+        match result {
+            Ok(response) => {
+                println!(">>>>>>>>>> CSV body:\n{}", response.body);
+                assert_eq!(response.http_status, "200 OK");
+                assert_ne!(
+                    response.body,
+                    CSVBody {
+                        csv_headers: vec![],
+                        csv_records: vec![]
+                    }
+                );
             }
-        );
+            Err(connector_error) => {
+                println!(">>>>>>>>>> ConnectorError: {:#?}", connector_error);
+            }
+        }
     }
 
     #[tokio::test]
@@ -168,14 +171,20 @@ mod tests {
         };
 
         // Call endpoint
-        let response = meteomatics_connector
+        let result = meteomatics_connector
             .query_time_series(utc_vdt, parameters, locations, None)
-            .await
-            .unwrap();
+            .await;
 
-        println!(">>>>>>>>>> CSV body:\n{}", response.body);
-
-        assert_eq!(response.http_status, "200 OK");
-        assert_ne!(response.body.to_string(), "");
+        match result {
+            Ok(response) => {
+                println!(">>>>>>>>>> CSV body:\n{}", response.body);
+                assert_eq!(response.http_status, "200 OK");
+                assert_ne!(response.body.to_string(), "");
+            }
+            _ => {
+                println!(">>>>>>>>>> error: {:#?}", result);
+                assert!(result.is_err())
+            }
+        }
     }
 }
