@@ -115,7 +115,8 @@ mod tests {
         match result {
             Ok(response) => {
                 println!(">>>>>>>>>> CSV body:\n{}", response.body);
-                assert_eq!(response.http_status, "200 OK");
+                assert_eq!(response.http_status_code, "200");
+                assert_eq!(response.http_status_message, "200 OK");
                 assert_ne!(
                     response.body,
                     CSVBody {
@@ -178,7 +179,7 @@ mod tests {
         match result {
             Ok(response) => {
                 println!(">>>>>>>>>> CSV body:\n{}", response.body);
-                assert_eq!(response.http_status, "200 OK");
+                assert_eq!(response.http_status_code, "200");
                 assert_ne!(response.body.to_string(), "");
             }
             _ => {

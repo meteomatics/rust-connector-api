@@ -4,7 +4,8 @@ use std::io::Read;
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConnectorResponse {
     pub body: CSVBody,
-    pub http_status: String,
+    pub http_status_code: String,
+    pub http_status_message: String,
 }
 
 pub type CSVHeader = Vec<String>;
@@ -21,14 +22,13 @@ impl CSVBody {
     pub fn new() -> Self {
         let mut csv_headers: CSVHeader = Default::default();
         let mut csv_records: CSVRecord = Default::default();
-        csv_headers.push("validdate".to_owned());
         Self {
             csv_headers,
             csv_records,
         }
     }
 
-    pub async fn add_header(&mut self, header: String) {
+    pub fn add_header(&mut self, header: String) {
         self.csv_headers.push(header);
     }
 
