@@ -66,8 +66,10 @@ impl APIClient {
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
-                    let connector_response: ConnectorResponse =
-                        self.create_response(response, parameters).await?;
+                    let prefix_headers = vec!["validdate".to_string()];
+                    let connector_response: ConnectorResponse = self
+                        .create_response(response, prefix_headers, parameters)
+                        .await?;
                     Ok(connector_response)
                 }
                 status => Err(ConnectorError::HttpError(
@@ -99,6 +101,7 @@ impl APIClient {
     async fn create_response(
         &self,
         response: Response,
+        prefix_headers: Vec<String>,
         parameters: Parameters<'_>,
     ) -> Result<ConnectorResponse, ConnectorError> {
         let status = response.status();
@@ -109,24 +112,31 @@ impl APIClient {
         println!(">>>>>>>>>> Body:\n{}", body);
 
         let mut csv_body: CSVBody = CSVBody::new();
+        for header in prefix_headers {
+            csv_body.add_header(header);
+        }
         for p_value in parameters.p_values {
-            csv_body.add_header(p_value.to_string()).await;
+            csv_body.add_header(p_value.to_string());
         }
 
         let mut rdr = csv::ReaderBuilder::new()
             .delimiter(b';')
             .from_reader(body.as_bytes());
 
-        csv_body
+        let result_body = csv_body
             .populate_records(&mut rdr)
             .await
-            .map_err(|error| ConnectorError::LibraryError(error))?;
+            .map_err(|error| ConnectorError::LibraryError(error));
         print!(">>>>>>>>>> CSV body:\n{}", csv_body);
 
-        Ok(ConnectorResponse {
-            body: csv_body,
-            http_status: status.to_string(),
-        })
+        match result_body {
+            Ok(_) => Ok(ConnectorResponse {
+                body: csv_body,
+                http_status_code: status.as_str().to_string(),
+                http_status_message: status.to_string(),
+            }),
+            Err(connector_error) => Err(connector_error),
+        }
     }
 }
 
@@ -211,7 +221,7 @@ mod tests {
 
                     let mut csv_body: CSVBody = CSVBody::new();
                     for p_value in parameters.p_values {
-                        csv_body.add_header(p_value.to_string()).await;
+                        csv_body.add_header(p_value.to_string());
                     }
 
                     let mut rdr = csv::ReaderBuilder::new()
