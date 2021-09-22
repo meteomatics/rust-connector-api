@@ -113,7 +113,7 @@ mod tests {
             .await;
 
         match result {
-            Ok(response) => {
+            Ok(ref response) => {
                 println!(">>>>>>>>>> CSV body:\n{}", response.body);
                 assert_eq!(response.http_status_code, "200");
                 assert_eq!(response.http_status_message, "200 OK");
@@ -125,10 +125,13 @@ mod tests {
                     }
                 );
             }
-            Err(connector_error) => {
+            Err(ref connector_error) => {
                 println!(">>>>>>>>>> ConnectorError: {:#?}", connector_error);
+                assert!(result.is_err());
             }
         }
+
+        assert!(result.is_ok());
     }
 
     #[tokio::test]
@@ -177,15 +180,17 @@ mod tests {
             .await;
 
         match result {
-            Ok(response) => {
+            Ok(ref response) => {
                 println!(">>>>>>>>>> CSV body:\n{}", response.body);
                 assert_eq!(response.http_status_code, "200");
                 assert_ne!(response.body.to_string(), "");
             }
-            _ => {
-                println!(">>>>>>>>>> error: {:#?}", result);
-                assert!(result.is_err())
+            Err(ref connector_error) => {
+                println!(">>>>>>>>>> ConnectorError: {:#?}", connector_error);
+                assert!(result.is_err());
             }
         }
+
+        assert!(result.is_ok());
     }
 }

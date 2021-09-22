@@ -105,11 +105,11 @@ impl APIClient {
         parameters: Parameters<'_>,
     ) -> Result<ConnectorResponse, ConnectorError> {
         let status = response.status();
-        println!(">>>>>>>>>> Status: {}", status);
-        println!(">>>>>>>>>> Headers:\n{:#?}", response.headers());
+        // println!(">>>>>>>>>> reqwest status: {}", status);
+        // println!(">>>>>>>>>> reqwest headers:\n{:#?}", response.headers());
 
         let body = response.text().await.unwrap();
-        println!(">>>>>>>>>> Body:\n{}", body);
+        // println!(">>>>>>>>>> reqwest body:\n{}", body);
 
         let mut csv_body: CSVBody = CSVBody::new();
         for header in prefix_headers {
@@ -127,7 +127,7 @@ impl APIClient {
             .populate_records(&mut rdr)
             .await
             .map_err(|error| ConnectorError::LibraryError(error));
-        print!(">>>>>>>>>> CSV body:\n{}", csv_body);
+        // println!(">>>>>>>>>> CSV body:\n{}", csv_body);
 
         match result_body {
             Ok(_) => Ok(ConnectorResponse {
@@ -213,11 +213,11 @@ mod tests {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
                     let status = response.status();
-                    println!(">>>>>>>>>> Status: {}", status);
-                    // println!(">>>>>>>>>> Headers:\n{:#?}", response.headers());
+                    println!(">>>>>>>>>> reqwest status: {}", status);
+                    // println!(">>>>>>>>>> reqwest headers:\n{:#?}", response.headers());
 
                     let body = response.text().await.unwrap();
-                    println!(">>>>>>>>>> Body:\n{}", body);
+                    println!(">>>>>>>>>> reqwest body:\n{}", body);
 
                     let mut csv_body: CSVBody = CSVBody::new();
                     for p_value in parameters.p_values {
@@ -228,9 +228,9 @@ mod tests {
                         .delimiter(b';')
                         .from_reader(body.as_bytes());
                     csv_body.populate_records(&mut rdr).await.unwrap();
-                    print!(">>>>>>>>>> CSV body:\n{}", csv_body);
+                    println!(">>>>>>>>>> CSV body:\n{}", csv_body);
 
-                    print!("\n>>>>>>>>>> CSV headers:\n");
+                    print!(">>>>>>>>>> CSV headers:\n");
                     println!("{}", csv_body.csv_headers.to_vec().join(","));
 
                     print!("\n>>>>>>>>>> CSV records:\n");
@@ -242,13 +242,13 @@ mod tests {
                     assert_ne!(body, "");
                 }
                 status => {
-                    println!(">>>>>>>>>> error: {:#?}", status.to_string());
-                    assert_ne!(status.as_str(), "200");
+                    println!(">>>>>>>>>> StatusCode error: {:#?}", status.to_string());
+                    assert_eq!(status.as_str(), "200"); // Assert to fail
                 }
             },
-            _ => {
-                println!(">>>>>>>>>> error: {:#?}", result);
-                assert!(result.is_err())
+            Err(ref error) => {
+                println!(">>>>>>>>>> error: {:#?}", error);
+                assert!(result.is_ok());
             }
         }
     }
