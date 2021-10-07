@@ -1,5 +1,5 @@
 use crate::connector_error::ConnectorError;
-use crate::connector_response::{CSVBody, ConnectorResponse};
+use crate::connector_response::{ConnectorResponse, ResponseBody};
 use crate::format::Format;
 use crate::locations::Locations;
 use crate::optionals::Optionals;
@@ -111,27 +111,28 @@ impl APIClient {
         let body = response.text().await.unwrap();
         // println!(">>>>>>>>>> reqwest body:\n{}", body);
 
-        let mut csv_body: CSVBody = CSVBody::new();
+        let mut response_body: ResponseBody = ResponseBody::new();
         for header in prefix_headers {
-            csv_body.add_header(header);
+            response_body.add_header(header);
         }
-        for p_value in parameters.p_values {
-            csv_body.add_header(p_value.to_string());
+        let p_values = parameters.p_values;
+        for p_value in p_values.clone() {
+            response_body.add_header(p_value.to_string());
         }
 
         let mut rdr = csv::ReaderBuilder::new()
             .delimiter(b';')
             .from_reader(body.as_bytes());
 
-        let result_body = csv_body
-            .populate_records(&mut rdr)
+        let result_body = response_body
+            .populate_records(&mut rdr, p_values.len())
             .await
             .map_err(|error| ConnectorError::LibraryError(error));
-        // println!(">>>>>>>>>> CSV body:\n{}", csv_body);
+        // println!(">>>>>>>>>> result body:\n{}", result_body);
 
         match result_body {
             Ok(_) => Ok(ConnectorResponse {
-                body: csv_body,
+                body: response_body,
                 http_status_code: status.as_str().to_string(),
                 http_status_message: status.to_string(),
             }),
@@ -151,7 +152,7 @@ mod tests {
 
     use crate::configuration::api_client::APIClient;
     use crate::connector_components::format::Format;
-    use crate::entities::connector_response::CSVBody;
+    use crate::entities::connector_response::ResponseBody;
     use crate::locations::{Coordinates, Locations};
     use crate::parameters::{PSet, Parameters, P};
     use crate::valid_date_time::{VDTOffset, ValidDateTime, ValidDateTimeBuilder};
@@ -219,23 +220,27 @@ mod tests {
                     let body = response.text().await.unwrap();
                     println!(">>>>>>>>>> reqwest body:\n{}", body);
 
-                    let mut csv_body: CSVBody = CSVBody::new();
-                    for p_value in parameters.p_values {
-                        csv_body.add_header(p_value.to_string());
+                    let mut response_body: ResponseBody = ResponseBody::new();
+                    let p_values = parameters.p_values;
+                    for p_value in p_values.clone() {
+                        response_body.add_header(p_value.to_string());
                     }
 
                     let mut rdr = csv::ReaderBuilder::new()
                         .delimiter(b';')
                         .from_reader(body.as_bytes());
-                    csv_body.populate_records(&mut rdr).await.unwrap();
-                    println!(">>>>>>>>>> CSV body:\n{}", csv_body);
+                    response_body
+                        .populate_records(&mut rdr, p_values.len())
+                        .await
+                        .unwrap();
+                    println!(">>>>>>>>>> ResponseBody:\n{}", response_body);
 
-                    print!(">>>>>>>>>> CSV headers:\n");
-                    println!("{}", csv_body.csv_headers.to_vec().join(","));
+                    print!(">>>>>>>>>> ResponseHeaders:\n");
+                    println!("{}", response_body.response_headers.to_vec().join(","));
 
-                    print!("\n>>>>>>>>>> CSV records:\n");
-                    for csv_record in csv_body.csv_records {
-                        println!("{}", csv_record.to_vec().join(","));
+                    print!("\n>>>>>>>>>> ResponseRecords:\n");
+                    for response_record in response_body.response_records {
+                        println!("{:#?}", response_record);
                     }
 
                     assert_eq!(status.as_str(), "200");
