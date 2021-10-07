@@ -44,7 +44,7 @@ impl MeteomaticsConnector {
 #[cfg(test)]
 mod tests {
 
-    use crate::connector_response::CSVBody;
+    use crate::connector_response::ResponseBody;
     use crate::locations::{Coordinates, Locations};
     use crate::optionals::{Opt, OptSet, Optionals};
     use crate::parameters::{PSet, Parameters, P};
@@ -114,14 +114,14 @@ mod tests {
 
         match result {
             Ok(ref response) => {
-                println!(">>>>>>>>>> CSV body:\n{}", response.body);
+                println!(">>>>>>>>>> ResponseBody:\n{}", response.body);
                 assert_eq!(response.http_status_code, "200");
                 assert_eq!(response.http_status_message, "200 OK");
                 assert_ne!(
                     response.body,
-                    CSVBody {
-                        csv_headers: vec![],
-                        csv_records: vec![]
+                    ResponseBody {
+                        response_headers: vec![],
+                        response_records: vec![]
                     }
                 );
             }
@@ -181,7 +181,7 @@ mod tests {
 
         match result {
             Ok(ref response) => {
-                println!(">>>>>>>>>> CSV body:\n{}", response.body);
+                println!(">>>>>>>>>> ResponseBody:\n{}", response.body);
                 assert_eq!(response.http_status_code, "200");
                 assert_ne!(response.body.to_string(), "");
             }

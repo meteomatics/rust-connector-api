@@ -3,56 +3,67 @@ use std::io::Read;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConnectorResponse {
-    pub body: CSVBody,
+    pub body: ResponseBody,
     pub http_status_code: String,
     pub http_status_message: String,
 }
 
-pub type CSVHeader = Vec<String>;
-pub type CSVRecord = Vec<Vec<String>>;
+pub type ResponseHeader = Vec<String>;
+pub type ResponseRecord = Vec<(String, Vec<f64>)>;
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct CSVBody {
-    pub csv_headers: CSVHeader,
-    pub csv_records: CSVRecord,
+pub struct ResponseBody {
+    pub response_headers: ResponseHeader,
+    pub response_records: ResponseRecord,
 }
 
-impl CSVBody {
+impl ResponseBody {
     #![allow(unused_mut)]
     pub fn new() -> Self {
-        let mut csv_headers: CSVHeader = Default::default();
-        let mut csv_records: CSVRecord = Default::default();
+        let mut response_headers: ResponseHeader = Default::default();
+        let mut response_records: ResponseRecord = Default::default();
         Self {
-            csv_headers,
-            csv_records,
+            response_headers,
+            response_records,
         }
     }
 
     pub fn add_header(&mut self, header: String) {
-        self.csv_headers.push(header);
+        self.response_headers.push(header);
     }
 
     pub async fn populate_records<R: Read>(
         &mut self,
         rdr: &mut Reader<R>,
+        header_num_elements: usize,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        for record in rdr.records() {
+        for record in rdr.records().skip(header_num_elements) {
             let record = record?;
-            let mut row: Vec<String> = vec![];
-            for (&_, value) in self.csv_headers.iter().zip(record.iter()) {
-                row.push(value.to_owned());
+            let mut index: String = "".to_string();
+            let mut values: Vec<f64> = vec![];
+            // for (&_, value) in self.response_headers.iter().zip(record.iter()) {
+            for n in 0..record.len() {
+                if n == 0 {
+                    index = record.get(n).unwrap().to_string();
+                } else {
+                    let value = record.get(n).unwrap();
+                    values.push(value.parse::<f64>().unwrap());
+                }
             }
-            self.csv_records.push(row);
+            let mut row: (String, Vec<f64>) = (index, values);
+            self.response_records.push(row);
         }
         Ok(())
     }
 }
 
-impl std::fmt::Display for CSVBody {
+impl std::fmt::Display for ResponseBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.csv_headers.to_vec().join(","))?;
-        for row in self.csv_records.iter() {
-            writeln!(f, "{}", row.to_vec().join(","))?;
+        writeln!(f, "{}", self.response_headers.to_vec().join(","))?;
+        for row in self.response_records.iter() {
+            let (index, values) = row;
+            let values_str: Vec<_> = values.to_vec().iter().map(ToString::to_string).collect();
+            writeln!(f, "{}", index.to_owned() + ": " + &values_str.join(","))?;
         }
         Ok(())
     }
