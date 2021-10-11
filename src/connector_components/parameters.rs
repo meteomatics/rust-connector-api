@@ -48,7 +48,7 @@ mod tests {
 
     #[tokio::test]
     async fn with_some_values() {
-        println!("##### with_some_values:");
+        println!("\n##### with_some_values:");
 
         let params: Parameters = Parameters {
             p_values: PSet::from_iter([
@@ -78,7 +78,7 @@ mod tests {
 
     #[tokio::test]
     async fn with_none_values() {
-        println!("##### with_none_values:");
+        println!("\n##### with_none_values:");
 
         let mut p_values: PSet<'_> = PSet::new();
         let p1 = P {

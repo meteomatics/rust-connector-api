@@ -1,3 +1,4 @@
+use crate::connector_error::ConnectorError;
 use chrono::{DateTime, FixedOffset, Local, Utc};
 use std::fmt::{Display, Formatter};
 
@@ -40,6 +41,45 @@ pub enum PeriodTime {
     Seconds(i32),
 }
 
+impl ValidDateTime {
+    pub fn format(&self) -> Result<String, ConnectorError> {
+        let start = self.start_date_time.to_string();
+        let mut suffix = "".to_string();
+        let mut both = false;
+        match self.period_date {
+            Some(_) => {
+                suffix = self.period_date.unwrap().to_string();
+            }
+            _ => {}
+        }
+        match self.time_step {
+            Some(_) => {
+                if suffix != "" {
+                    suffix = suffix + ":";
+                    both = true;
+                }
+                suffix = suffix + &*self.time_step.unwrap().to_string();
+            }
+            _ => {}
+        }
+        return match self.end_date_time {
+            None => Ok(start + &*suffix),
+            Some(_) => {
+                if both {
+                    return Err(ConnectorError::LibraryError(
+                        "Cannot use period date and time step simultaneously.".to_string(),
+                    ));
+                }
+                let mut end = self.end_date_time.unwrap().to_string();
+                if suffix != "" {
+                    end = end + ":" + &*suffix;
+                }
+                Ok(format!("{}--{}", start, end))
+            }
+        };
+    }
+}
+
 impl Display for VDTOffset {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -80,7 +120,7 @@ mod tests {
 
     #[tokio::test]
     async fn create_with_default() {
-        println!("##### create_with_default (UTC):");
+        println!("\n##### create_with_default (UTC):");
 
         // Use UTC.
         let start_date_time = VDTOffset::Utc(Utc::now());
@@ -119,7 +159,7 @@ mod tests {
 
     #[tokio::test]
     async fn create_with_optional_params() {
-        println!("##### create_with_optional_params (local):");
+        println!("\n##### create_with_optional_params (local):");
 
         // Use local time zone.
         let start_date_time = Local::now();

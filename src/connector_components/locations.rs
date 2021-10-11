@@ -20,7 +20,7 @@ mod tests {
 
     #[tokio::test]
     async fn with_some_values() {
-        println!("##### with_some_values:");
+        println!("\n##### with_some_values:");
 
         // Single point
         let coordinates = Coordinates::from(["47.419708", "9.358478"]);

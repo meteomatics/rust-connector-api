@@ -40,9 +40,8 @@ impl APIClient {
         let url_fragment = match optionals {
             None => {
                 format!(
-                    "{}--{}/{}/{}/{}",
-                    vdt.start_date_time,
-                    vdt.end_date_time.unwrap(),
+                    "{}/{}/{}/{}",
+                    vdt.format()?,
                     parameters,
                     locations,
                     Format::CSV.to_string()
@@ -50,9 +49,8 @@ impl APIClient {
             }
             Some(_) => {
                 format!(
-                    "{}--{}/{}/{}/{}?{}",
-                    vdt.start_date_time,
-                    vdt.end_date_time.unwrap(),
+                    "{}/{}/{}/{}?{}",
+                    vdt.format()?,
                     parameters,
                     locations,
                     Format::CSV.to_string(),
@@ -127,7 +125,7 @@ impl APIClient {
         let result_body = response_body
             .populate_records(&mut rdr, p_values.len())
             .await
-            .map_err(|error| ConnectorError::LibraryError(error));
+            .map_err(|error| ConnectorError::GenericError(error));
         // println!(">>>>>>>>>> result body:\n{}", result_body);
 
         match result_body {
@@ -155,14 +153,14 @@ mod tests {
     use crate::entities::connector_response::ResponseBody;
     use crate::locations::{Coordinates, Locations};
     use crate::parameters::{PSet, Parameters, P};
-    use crate::valid_date_time::{VDTOffset, ValidDateTime, ValidDateTimeBuilder};
+    use crate::valid_date_time::{PeriodTime, VDTOffset, ValidDateTime, ValidDateTimeBuilder};
     use chrono::{Duration, Local};
     use reqwest::StatusCode;
     use std::iter::FromIterator;
 
     #[tokio::test]
     async fn client_fires_get_request_to_base_url() {
-        println!("##### client_fires_get_request_to_base_url:");
+        println!("\n##### client_fires_get_request_to_base_url:");
 
         // Change to correct username and password.
         let api_client = APIClient::new(
@@ -178,9 +176,11 @@ mod tests {
         println!(">>>>>>>>>> now (local) {:?}", now);
         let yesterday = VDTOffset::Local(now.clone() - Duration::days(1));
         let now = VDTOffset::Local(now);
+        let time_step = PeriodTime::Hours(1);
         let local_vdt: ValidDateTime = ValidDateTimeBuilder::default()
             .start_date_time(yesterday)
             .end_date_time(now)
+            .time_step(time_step)
             .build()
             .unwrap();
 
@@ -198,9 +198,10 @@ mod tests {
         };
 
         let url_fragment = &*format!(
-            "{}--{}/{}/{}/{}",
+            "{}--{}{}/{}/{}/{}",
             local_vdt.start_date_time,
             local_vdt.end_date_time.unwrap(),
+            ":".to_string() + &*time_step.to_string(),
             parameters,
             locations,
             Format::CSV.to_string()
