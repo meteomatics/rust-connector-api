@@ -41,7 +41,7 @@ mod tests {
 
     #[tokio::test]
     async fn with_values() {
-        println!("##### with_values:");
+        println!("\n##### with_values:");
 
         let optionals: Optionals = Optionals {
             opt_values: OptSet::from_iter([

@@ -10,7 +10,11 @@ pub enum ConnectorError {
     #[error("HTTP error: `{0}`, `{1}`, {2}`")]
     HttpError(String, String, reqwest::StatusCode),
 
-    /// General library error.
+    /// Library error.
+    #[error("Library error: `{0}`")]
+    LibraryError(String),
+
+    /// Generic error.
     #[error(transparent)]
-    LibraryError(#[from] Box<dyn std::error::Error>),
+    GenericError(#[from] Box<dyn std::error::Error>),
 }
