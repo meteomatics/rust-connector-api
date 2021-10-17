@@ -118,7 +118,7 @@ mod tests {
 
         match result {
             Ok(ref response) => {
-                let response_body = &response.body;
+                let response_body = &response.response_body;
                 println!("\n>>>>>>>>>> ResponseBody:\n{}", response_body);
                 println!(
                     ">>>>>>>>>> ResponseHeaders:\n{}\n",
@@ -134,7 +134,7 @@ mod tests {
                 assert_eq!(response.http_status_code, "200");
                 assert_eq!(response.http_status_message, "200 OK");
                 assert_ne!(
-                    response.body,
+                    response.response_body,
                     ResponseBody {
                         response_headers: vec![],
                         response_records: vec![]
@@ -199,9 +199,9 @@ mod tests {
 
         match result {
             Ok(ref response) => {
-                println!(">>>>>>>>>> ResponseBody:\n{}", response.body);
+                println!(">>>>>>>>>> ResponseBody:\n{}", response.response_body);
                 assert_eq!(response.http_status_code, "200");
-                assert_ne!(response.body.to_string(), "");
+                assert_ne!(response.response_body.to_string(), "");
             }
             Err(ref connector_error) => {
                 println!(">>>>>>>>>> ConnectorError: {:#?}", connector_error);
