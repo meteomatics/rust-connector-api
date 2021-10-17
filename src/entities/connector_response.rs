@@ -3,7 +3,7 @@ use std::io::Read;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConnectorResponse {
-    pub body: ResponseBody,
+    pub response_body: ResponseBody,
     pub http_status_code: String,
     pub http_status_message: String,
 }
@@ -18,13 +18,10 @@ pub struct ResponseBody {
 }
 
 impl ResponseBody {
-    #![allow(unused_mut)]
     pub fn new() -> Self {
-        let mut response_headers: ResponseHeader = Default::default();
-        let mut response_records: ResponseRecord = Default::default();
         Self {
-            response_headers,
-            response_records,
+            response_headers: Default::default(),
+            response_records: Default::default(),
         }
     }
 
@@ -50,7 +47,7 @@ impl ResponseBody {
                     values.push(value.parse::<f64>().unwrap());
                 }
             }
-            let mut row: (String, Vec<f64>) = (index, values);
+            let row: (String, Vec<f64>) = (index, values);
             self.response_records.push(row);
         }
         Ok(())

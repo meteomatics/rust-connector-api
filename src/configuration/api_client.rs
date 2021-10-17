@@ -130,7 +130,7 @@ impl APIClient {
 
         match result_body {
             Ok(_) => Ok(ConnectorResponse {
-                body: response_body,
+                response_body,
                 http_status_code: status.as_str().to_string(),
                 http_status_message: status.to_string(),
             }),
