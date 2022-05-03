@@ -9,12 +9,15 @@ pub struct ConnectorResponse {
 }
 
 pub type ResponseHeader = Vec<String>;
-pub type ResponseRecord = Vec<(String, Vec<f64>)>;
+//pub type ResponseRecord = Vec<(String, Vec<f64>)>;
+pub type ResponseRecord = Vec<Vec<f64>>;
+pub type ResponseIndex = Vec<String>;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ResponseBody {
     pub response_headers: ResponseHeader,
     pub response_records: ResponseRecord,
+    pub response_indexes: ResponseIndex,
 }
 
 impl ResponseBody {
@@ -22,6 +25,7 @@ impl ResponseBody {
         Self {
             response_headers: Default::default(),
             response_records: Default::default(),
+            response_indexes: Default::default(),
         }
     }
 
@@ -47,8 +51,10 @@ impl ResponseBody {
                     values.push(value.parse::<f64>().unwrap());
                 }
             }
-            let row: (String, Vec<f64>) = (index, values);
+            let row_index: String = index;
+            let row: Vec<f64> = values;
             self.response_records.push(row);
+            self.response_indexes.push(row_index);
         }
         Ok(())
     }
@@ -57,8 +63,9 @@ impl ResponseBody {
 impl std::fmt::Display for ResponseBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.response_headers.to_vec().join(","))?;
-        for row in self.response_records.iter() {
-            let (index, values) = row;
+        for (i, row) in self.response_records.iter().enumerate() {
+            let index = &self.response_indexes[i];
+            let values = row;
             let values_str: Vec<_> = values.to_vec().iter().map(ToString::to_string).collect();
             writeln!(f, "{}", index.to_owned() + ": " + &values_str.join(","))?;
         }

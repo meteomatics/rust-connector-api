@@ -2,7 +2,7 @@ mod configuration;
 mod connector_components;
 mod entities;
 
-pub use crate::connector_components::*;
+pub use connector_components::*;
 pub use crate::entities::*;
 
 use crate::configuration::api_client::APIClient;
@@ -41,6 +41,7 @@ impl MeteomaticsConnector {
     }
 }
 
+// Unit testing section
 #[cfg(test)]
 mod tests {
 
@@ -124,9 +125,10 @@ mod tests {
                     ">>>>>>>>>> ResponseHeaders:\n{}\n",
                     response_body.response_headers.to_vec().join(",")
                 );
-                println!(">>>>>>>>>> ResponseRecords:");
-                for row in response_body.response_records.iter() {
-                    let (index, values) = row;
+                println!(">>>>>>>>>> ResponseRecords: NEW");
+                for (i, row) in response_body.response_records.iter().enumerate() {
+                    let index = &response.response_body.response_indexes[i];
+                    let values = row;
                     let values_str: Vec<_> =
                         values.to_vec().iter().map(ToString::to_string).collect();
                     println!("{}", index.to_owned() + ": " + &values_str.join(","));
@@ -137,7 +139,8 @@ mod tests {
                     response.response_body,
                     ResponseBody {
                         response_headers: vec![],
-                        response_records: vec![]
+                        response_records: vec![],
+                        response_indexes: vec![],
                     }
                 );
             }
