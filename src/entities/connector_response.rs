@@ -9,7 +9,6 @@ pub struct ConnectorResponse {
 }
 
 pub type ResponseHeader = Vec<String>;
-//pub type ResponseRecord = Vec<(String, Vec<f64>)>;
 pub type ResponseRecord = Vec<Vec<f64>>;
 pub type ResponseIndex = Vec<String>;
 
@@ -63,10 +62,13 @@ impl ResponseBody {
 impl std::fmt::Display for ResponseBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.response_headers.to_vec().join(","))?;
-        for (i, row) in self.response_records.iter().enumerate() {
+        for i in 0..self.response_records.len() {
             let index = &self.response_indexes[i];
-            let values = row;
-            let values_str: Vec<_> = values.to_vec().iter().map(ToString::to_string).collect();
+            let values = &self.response_records[i];
+            let values_str: Vec<_> = values.to_vec().
+                iter()
+                .map(ToString::to_string)
+                .collect();
             writeln!(f, "{}", index.to_owned() + ": " + &values_str.join(","))?;
         }
         Ok(())

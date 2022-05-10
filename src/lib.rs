@@ -126,13 +126,15 @@ mod tests {
                     response_body.response_headers.to_vec().join(",")
                 );
                 println!(">>>>>>>>>> ResponseRecords: NEW");
-                for (i, row) in response_body.response_records.iter().enumerate() {
-                    let index = &response.response_body.response_indexes[i];
-                    let values = row;
-                    let values_str: Vec<_> =
-                        values.to_vec().iter().map(ToString::to_string).collect();
-                    println!("{}", index.to_owned() + ": " + &values_str.join(","));
-                }
+                for i in 0..response_body.response_records.len() {
+                    let index = &response_body.response_indexes[i];
+                    let values = &response_body.response_records[i];
+                    let value_str: Vec<_> = values.to_vec()
+                        .iter()
+                        .map(ToString::to_string)
+                        .collect();
+                    println!("{}", index.to_owned() + ": " + &value_str.join(","));
+                }   
                 assert_eq!(response.http_status_code, "200");
                 assert_eq!(response.http_status_message, "200 OK");
                 assert_ne!(
