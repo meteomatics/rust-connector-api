@@ -65,8 +65,8 @@ impl std::fmt::Display for ResponseBody {
         for i in 0..self.response_records.len() {
             let index = &self.response_indexes[i];
             let values = &self.response_records[i];
-            let values_str: Vec<_> = values.to_vec().
-                iter()
+            let values_str: Vec<_> = values.to_vec()
+                .iter()
                 .map(ToString::to_string)
                 .collect();
             writeln!(f, "{}", index.to_owned() + ": " + &values_str.join(","))?;
