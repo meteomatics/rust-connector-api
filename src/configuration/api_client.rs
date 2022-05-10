@@ -2,8 +2,6 @@ use crate::connector_error::ConnectorError;
 use crate::connector_response::{ConnectorResponse, ResponseBody};
 use crate::format::Format;
 use crate::locations::Locations;
-use crate::optionals::Optionals;
-use crate::parameters::Parameters;
 use crate::valid_date_time::ValidDateTime;
 use reqwest::{Client, Response, StatusCode};
 use url::{ParseError, Url};
@@ -33,16 +31,16 @@ impl APIClient {
     pub async fn query_time_series(
         &self,
         vdt: ValidDateTime,
-        parameters: Parameters<'_>,
+        parameters: Vec<String>,
         locations: Locations<'_>,
-        optionals: Option<Optionals<'_>>,
+        optionals: Option<Vec<String>>,
     ) -> Result<ConnectorResponse, ConnectorError> {
         let url_fragment = match optionals {
             None => {
                 format!(
                     "{}/{}/{}/{}",
                     vdt.format()?,
-                    parameters,
+                    parameters.join(","),
                     locations,
                     Format::CSV.to_string()
                 )
@@ -51,10 +49,10 @@ impl APIClient {
                 format!(
                     "{}/{}/{}/{}?{}",
                     vdt.format()?,
-                    parameters,
+                    parameters.join(","),
                     locations,
                     Format::CSV.to_string(),
-                    optionals.unwrap()
+                    optionals.unwrap().join("&")
                 )
             }
         };
@@ -100,7 +98,7 @@ impl APIClient {
         &self,
         response: Response,
         prefix_headers: Vec<String>,
-        parameters: Parameters<'_>,
+        parameters: Vec<String>,
     ) -> Result<ConnectorResponse, ConnectorError> {
         let status = response.status();
         // println!(">>>>>>>>>> reqwest status: {}", status);
@@ -113,9 +111,8 @@ impl APIClient {
         for header in prefix_headers {
             response_body.add_header(header);
         }
-        let p_values = parameters.p_values;
-        for p_value in p_values.clone() {
-            response_body.add_header(p_value.to_string());
+        for p_value in parameters.clone() {
+            response_body.add_header(p_value);
         }
 
         let mut rdr = csv::ReaderBuilder::new()
@@ -123,7 +120,7 @@ impl APIClient {
             .from_reader(body.as_bytes());
 
         let result_body = response_body
-            .populate_records(&mut rdr, p_values.len())
+            .populate_records(&mut rdr, parameters.len())
             .await
             .map_err(|error| ConnectorError::GenericError(error));
         // println!(">>>>>>>>>> result body:\n{}", result_body);
@@ -152,11 +149,9 @@ mod tests {
     use crate::connector_components::format::Format;
     use crate::entities::connector_response::ResponseBody;
     use crate::locations::{Coordinates, Locations};
-    use crate::parameters::{PSet, Parameters, P};
     use crate::valid_date_time::{PeriodTime, VDTOffset, ValidDateTime, ValidDateTimeBuilder};
     use chrono::{Duration, Local};
     use reqwest::StatusCode;
-    use std::iter::FromIterator;
 
     #[tokio::test]
     async fn client_fires_get_request_to_base_url() {
@@ -185,12 +180,8 @@ mod tests {
             .unwrap();
 
         // Create Parameters
-        let parameters: Parameters = Parameters {
-            p_values: PSet::from_iter([P {
-                k: "t_2m",
-                v: Some("C"),
-            }]),
-        };
+        let mut parameters = Vec::new();
+        parameters.push(String::from("t_2m:C"));
 
         // Create Locations
         let locations: Locations = Locations {
@@ -202,7 +193,7 @@ mod tests {
             local_vdt.start_date_time,
             local_vdt.end_date_time.unwrap(),
             ":".to_string() + &*time_step.to_string(),
-            parameters,
+            parameters.join(","),
             locations,
             Format::CSV.to_string()
         );
@@ -222,16 +213,15 @@ mod tests {
                     println!(">>>>>>>>>> reqwest body:\n{}", body);
 
                     let mut response_body: ResponseBody = ResponseBody::new();
-                    let p_values = parameters.p_values;
-                    for p_value in p_values.clone() {
-                        response_body.add_header(p_value.to_string());
+                    for p_value in parameters.clone() {
+                        response_body.add_header(p_value);
                     }
 
                     let mut rdr = csv::ReaderBuilder::new()
                         .delimiter(b';')
                         .from_reader(body.as_bytes());
                     response_body
-                        .populate_records(&mut rdr, p_values.len())
+                        .populate_records(&mut rdr, parameters.len())
                         .await
                         .unwrap();
                     println!(">>>>>>>>>> ResponseBody:\n{}", response_body);

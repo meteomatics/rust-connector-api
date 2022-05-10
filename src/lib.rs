@@ -9,8 +9,6 @@ use crate::configuration::api_client::APIClient;
 use crate::connector_error::ConnectorError;
 use crate::connector_response::ConnectorResponse;
 use crate::locations::Locations;
-use crate::optionals::Optionals;
-use crate::parameters::Parameters;
 use crate::valid_date_time::ValidDateTime;
 
 #[macro_use]
@@ -31,9 +29,9 @@ impl MeteomaticsConnector {
     pub async fn query_time_series(
         &self,
         vdt: ValidDateTime,
-        parameters: Parameters<'_>,
+        parameters: Vec<String>,
         locations: Locations<'_>,
-        optionals: Option<Optionals<'_>>,
+        optionals: Option<Vec<String>>,
     ) -> Result<ConnectorResponse, ConnectorError> {
         self.api_client
             .query_time_series(vdt, parameters, locations, optionals)
@@ -47,14 +45,11 @@ mod tests {
 
     use crate::connector_response::ResponseBody;
     use crate::locations::{Coordinates, Locations};
-    use crate::optionals::{Opt, OptSet, Optionals};
-    use crate::parameters::{PSet, Parameters, P};
     use crate::valid_date_time::{
         PeriodDate, PeriodTime, VDTOffset, ValidDateTime, ValidDateTimeBuilder,
     };
     use crate::MeteomaticsConnector;
     use chrono::{Duration, Utc};
-    use std::iter::FromIterator;
 
     #[tokio::test]
     async fn call_query_time_series_with_options() {
@@ -80,18 +75,9 @@ mod tests {
             .unwrap();
 
         // Create Parameters
-        let parameters: Parameters = Parameters {
-            p_values: PSet::from_iter([
-                P {
-                    k: "t_2m",
-                    v: Some("C"),
-                },
-                P {
-                    k: "precip_1h",
-                    v: Some("mm"),
-                },
-            ]),
-        };
+        let mut parameters = Vec::new();
+        parameters.push(String::from("t_2m:C"));
+        parameters.push(String::from("precip_1h:mm"));
 
         // Create Locations
         let locations: Locations = Locations {
@@ -99,18 +85,9 @@ mod tests {
         };
 
         // Create Optionals
-        let optionals: Optionals = Optionals {
-            opt_values: OptSet::from_iter([
-                Opt {
-                    k: "source",
-                    v: "mix",
-                },
-                Opt {
-                    k: "calibrated",
-                    v: "true",
-                },
-            ]),
-        };
+        let mut optionals = Vec::new();
+        optionals.push(String::from("source=mix"));
+        optionals.push(String::from("calibrated=true"));
 
         // Call endpoint
         let result = meteomatics_connector
@@ -179,18 +156,9 @@ mod tests {
             .unwrap();
 
         // Create Parameters
-        let parameters: Parameters = Parameters {
-            p_values: PSet::from_iter([
-                P {
-                    k: "t_2m",
-                    v: Some("C"),
-                },
-                P {
-                    k: "precip_1h",
-                    v: Some("mm"),
-                },
-            ]),
-        };
+        let mut parameters = Vec::new();
+        parameters.push(String::from("t_2m:C"));
+        parameters.push(String::from("precip_1h:mm"));
 
         // Create Locations
         let locations: Locations = Locations {
@@ -243,18 +211,9 @@ mod tests {
             .unwrap();
 
         // Create Parameters
-        let parameters: Parameters = Parameters {
-            p_values: PSet::from_iter([
-                P {
-                    k: "t_2m",
-                    v: Some("C"),
-                },
-                P {
-                    k: "precip_1h",
-                    v: Some("mm"),
-                },
-            ]),
-        };
+        let mut parameters = Vec::new();
+        parameters.push(String::from("t_2m:C"));
+        parameters.push(String::from("precip_1h:mm"));
 
         // Create Locations
         let locations: Locations = Locations {
