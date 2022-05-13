@@ -48,15 +48,23 @@ mod tests {
     };
     use crate::MeteomaticsConnector;
     use chrono::{Duration, Utc};
+    use dotenv::dotenv;
+    use std::env;
+
 
     #[tokio::test]
     async fn call_query_time_series_with_options() {
         println!("\n##### call_query_time_series_with_options:");
 
+        // Credentials
+        dotenv().ok();
+        let api_key: String = env::var("METEOMATICS_PW").unwrap();
+        let api_user: String = env::var("METEOMATICS_USER").unwrap();
+
         // Create API connector
         let meteomatics_connector = MeteomaticsConnector::new(
-            String::from("python-community"),
-            String::from("Umivipawe179"),
+            api_user,
+            api_key,
             10,
         );
 
@@ -125,10 +133,15 @@ mod tests {
     async fn call_query_time_series_without_options() {
         println!("\n##### call_query_time_series_without_options:");
 
+        // Credentials
+        dotenv().ok();
+        let api_key: String = env::var("METEOMATICS_PW").unwrap();
+        let api_user: String = env::var("METEOMATICS_USER").unwrap();
+        
         // Create API connector
         let meteomatics_connector = MeteomaticsConnector::new(
-            String::from("python-community"),
-            String::from("Umivipawe179"),
+            api_user,
+            api_key,
             10,
         );
 
@@ -176,10 +189,15 @@ mod tests {
     async fn use_period_date_and_time_step_simultaneously() {
         println!("\n##### use_period_date_and_time_step_simultaneously:");
 
+        // Credentials
+        dotenv().ok();
+        let api_key: String = env::var("METEOMATICS_PW").unwrap();
+        let api_user: String = env::var("METEOMATICS_USER").unwrap();
+        
         // Create API connector
         let meteomatics_connector = MeteomaticsConnector::new(
-            String::from("python-community"),
-            String::from("Umivipawe179"),
+            api_user,
+            api_key,
             10,
         );
 

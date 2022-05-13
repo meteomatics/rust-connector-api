@@ -80,3 +80,6 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# API Credentials
+.env

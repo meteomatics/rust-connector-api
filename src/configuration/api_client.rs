@@ -167,15 +167,22 @@ mod tests {
     use crate::valid_date_time::{PeriodTime, VDTOffset, ValidDateTime, ValidDateTimeBuilder};
     use chrono::{Duration, Local};
     use reqwest::StatusCode;
+    use dotenv::dotenv;
+    use std::env;
 
     #[tokio::test]
     async fn client_fires_get_request_to_base_url() {
         println!("\n##### client_fires_get_request_to_base_url:");
 
+        // Credentials
+        dotenv().ok();
+        let api_key: String = env::var("METEOMATICS_PW").unwrap();
+        let api_user: String = env::var("METEOMATICS_USER").unwrap();
+
         // Change to correct username and password.
         let api_client = APIClient::new(
-            String::from("python-community"),
-            String::from("Umivipawe179"),
+            api_user,
+            api_key,
             10,
         );
         println!(">>>>>>>>>> api_client: {:?}", api_client);
