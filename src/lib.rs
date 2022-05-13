@@ -8,7 +8,6 @@ pub use crate::entities::*;
 use crate::configuration::api_client::APIClient;
 use crate::connector_error::ConnectorError;
 use crate::connector_response::ConnectorResponse;
-use crate::locations::Locations;
 use crate::valid_date_time::ValidDateTime;
 
 #[macro_use]
@@ -30,11 +29,11 @@ impl MeteomaticsConnector {
         &self,
         vdt: ValidDateTime,
         parameters: Vec<String>,
-        locations: Locations<'_>,
+        coordinates: Vec<Vec<f32>>,
         optionals: Option<Vec<String>>,
     ) -> Result<ConnectorResponse, ConnectorError> {
         self.api_client
-            .query_time_series(vdt, parameters, locations, optionals)
+            .query_time_series(vdt, parameters, coordinates, optionals)
             .await
     }
 }
@@ -44,7 +43,6 @@ impl MeteomaticsConnector {
 mod tests {
 
     use crate::connector_response::ResponseBody;
-    use crate::locations::{Coordinates, Locations};
     use crate::valid_date_time::{
         PeriodDate, PeriodTime, VDTOffset, ValidDateTime, ValidDateTimeBuilder,
     };
@@ -57,8 +55,8 @@ mod tests {
 
         // Create API connector
         let meteomatics_connector = MeteomaticsConnector::new(
-            "python-community".to_string(),
-            "Umivipawe179".to_string(),
+            String::from("python-community"),
+            String::from("Umivipawe179"),
             10,
         );
 
@@ -80,9 +78,7 @@ mod tests {
         parameters.push(String::from("precip_1h:mm"));
 
         // Create Locations
-        let locations: Locations = Locations {
-            coordinates: Coordinates::from(["47.419708", "9.358478"]),
-        };
+        let coordinates: Vec<Vec<f32>> = vec![vec![46.685, 7.953], vec![46.759, -76.027]];
 
         // Create Optionals
         let mut optionals = Vec::new();
@@ -91,35 +87,28 @@ mod tests {
 
         // Call endpoint
         let result = meteomatics_connector
-            .query_time_series(utc_vdt, parameters, locations, Option::from(optionals))
+            .query_time_series(
+                utc_vdt, parameters, coordinates, Option::from(optionals)
+            )
             .await;
 
         match result {
             Ok(ref response) => {
                 let response_body = &response.response_body;
-                println!("\n>>>>>>>>>> ResponseBody:\n{}", response_body);
+                println!("\n>>>>>>>>>> ResponseBody:\n{:?}", response_body);
                 println!(
                     ">>>>>>>>>> ResponseHeaders:\n{}\n",
-                    response_body.response_headers.to_vec().join(",")
+                    response_body.response_header.to_vec().join(",")
                 );
                 println!(">>>>>>>>>> ResponseRecords: NEW");
-                for i in 0..response_body.response_records.len() {
-                    let index = &response_body.response_indexes[i];
-                    let values = &response_body.response_records[i];
-                    let value_str: Vec<_> = values.to_vec()
-                        .iter()
-                        .map(ToString::to_string)
-                        .collect();
-                    println!("{}", index.to_owned() + ": " + &value_str.join(","));
-                }   
+                println!("{:?}", response_body.response_df);
                 assert_eq!(response.http_status_code, "200");
                 assert_eq!(response.http_status_message, "200 OK");
                 assert_ne!(
                     response.response_body,
                     ResponseBody {
-                        response_headers: vec![],
-                        response_records: vec![],
-                        response_indexes: vec![],
+                        response_header: vec![],
+                        response_df: polars::prelude::DataFrame::default(),
                     }
                 );
             }
@@ -138,8 +127,8 @@ mod tests {
 
         // Create API connector
         let meteomatics_connector = MeteomaticsConnector::new(
-            "python-community".to_string(),
-            "Umivipawe179".to_string(),
+            String::from("python-community"),
+            String::from("Umivipawe179"),
             10,
         );
 
@@ -161,20 +150,18 @@ mod tests {
         parameters.push(String::from("precip_1h:mm"));
 
         // Create Locations
-        let locations: Locations = Locations {
-            coordinates: Coordinates::from(["47.419708", "9.358478"]),
-        };
+        let coords: Vec<Vec<f32>> = vec![vec![47.419708, 9.358478]];
 
         // Call endpoint
         let result = meteomatics_connector
-            .query_time_series(utc_vdt, parameters, locations, None)
+            .query_time_series(utc_vdt, parameters, coords, None)
             .await;
 
         match result {
             Ok(ref response) => {
-                println!(">>>>>>>>>> ResponseBody:\n{}", response.response_body);
+                println!(">>>>>>>>>> ResponseBody:\n{:?}", response.response_body);
                 assert_eq!(response.http_status_code, "200");
-                assert_ne!(response.response_body.to_string(), "");
+                // assert_ne!(response.response_body.to_string(), "");
             }
             Err(ref connector_error) => {
                 println!(">>>>>>>>>> ConnectorError: {:#?}", connector_error);
@@ -191,8 +178,8 @@ mod tests {
 
         // Create API connector
         let meteomatics_connector = MeteomaticsConnector::new(
-            "python-community".to_string(),
-            "Umivipawe179".to_string(),
+            String::from("python-community"),
+            String::from("Umivipawe179"),
             10,
         );
 
@@ -216,13 +203,11 @@ mod tests {
         parameters.push(String::from("precip_1h:mm"));
 
         // Create Locations
-        let locations: Locations = Locations {
-            coordinates: Coordinates::from(["47.419708", "9.358478"]),
-        };
+        let coords: Vec<Vec<f32>> = vec![vec![47.419708, 9.358478]];
 
         // Call endpoint
         let result = meteomatics_connector
-            .query_time_series(utc_vdt, parameters, locations, None)
+            .query_time_series(utc_vdt, parameters, coords, None)
             .await;
 
         match result {

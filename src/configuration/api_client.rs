@@ -1,7 +1,6 @@
 use crate::connector_error::ConnectorError;
 use crate::connector_response::{ConnectorResponse, ResponseBody};
 use crate::format::Format;
-use crate::locations::Locations;
 use crate::valid_date_time::ValidDateTime;
 use reqwest::{Client, Response, StatusCode};
 use url::{ParseError, Url};
@@ -32,16 +31,19 @@ impl APIClient {
         &self,
         vdt: ValidDateTime,
         parameters: Vec<String>,
-        locations: Locations<'_>,
+        coordinates: Vec<Vec<f32>>,
         optionals: Option<Vec<String>>,
     ) -> Result<ConnectorResponse, ConnectorError> {
+
+        let coords_str = coords_to_str(coordinates).await;
+
         let url_fragment = match optionals {
             None => {
                 format!(
                     "{}/{}/{}/{}",
                     vdt.format()?,
                     parameters.join(","),
-                    locations,
+                    coords_str,
                     Format::CSV.to_string()
                 )
             }
@@ -50,7 +52,7 @@ impl APIClient {
                     "{}/{}/{}/{}?{}",
                     vdt.format()?,
                     parameters.join(","),
-                    locations,
+                    coords_str,
                     Format::CSV.to_string(),
                     optionals.unwrap().join("&")
                 )
@@ -79,7 +81,7 @@ impl APIClient {
             }),
         }
     }
-
+    
     async fn do_http_get(&self, url_fragment: &str) -> Result<Response, reqwest::Error> {
         let full_url = build_url(url_fragment)
             .await
@@ -116,13 +118,16 @@ impl APIClient {
         }
 
         let mut rdr = csv::ReaderBuilder::new()
+            .has_headers(false)
             .delimiter(b';')
             .from_reader(body.as_bytes());
-
+        
+        // the various errors thrown by csv_to_polars are converted 
+        // to ConnectorError using map_err().
         let result_body = response_body
-            .populate_records(&mut rdr, parameters.len())
+            .csv_to_polars(&mut rdr)
             .await
-            .map_err(|error| ConnectorError::GenericError(error));
+            .map_err(|err| ConnectorError::GenericError(err));
         // println!(">>>>>>>>>> result body:\n{}", result_body);
 
         match result_body {
@@ -135,20 +140,30 @@ impl APIClient {
         }
     }
 }
-
 async fn build_url(url_fragment: &str) -> Result<Url, ParseError> {
     let base_url = Url::parse(DEFAULT_API_BASE_URL).expect("Base URL is known to be valid");
     let full_url = base_url.join(url_fragment)?;
     Ok(full_url)
 }
 
+async fn coords_to_str(coords: Vec<Vec<f32>>) -> String {
+    let mut coords_str: Vec<String> = Vec::new();
+    for i in 0..coords.len() {
+        let elem = &coords[i];
+        let lat = elem[0];
+        let lon = elem[1];
+        coords_str.push(format!("{},{}", lat, lon));
+    }
+    coords_str.join("+")
+}
+
 #[cfg(test)]
 mod tests {
 
+    use crate::configuration::api_client::coords_to_str;
     use crate::configuration::api_client::APIClient;
     use crate::connector_components::format::Format;
     use crate::entities::connector_response::ResponseBody;
-    use crate::locations::{Coordinates, Locations};
     use crate::valid_date_time::{PeriodTime, VDTOffset, ValidDateTime, ValidDateTimeBuilder};
     use chrono::{Duration, Local};
     use reqwest::StatusCode;
@@ -159,8 +174,8 @@ mod tests {
 
         // Change to correct username and password.
         let api_client = APIClient::new(
-            "python-community".to_string(),
-            "Umivipawe179".to_string(),
+            String::from("python-community"),
+            String::from("Umivipawe179"),
             10,
         );
         println!(">>>>>>>>>> api_client: {:?}", api_client);
@@ -184,9 +199,9 @@ mod tests {
         parameters.push(String::from("t_2m:C"));
 
         // Create Locations
-        let locations: Locations = Locations {
-            coordinates: Coordinates::from(["52.520551", "13.461804"]),
-        };
+        let coords = vec![vec![52.520551, 13.461804]];
+        
+        let coord_str = coords_to_str(coords).await;
 
         let url_fragment = &*format!(
             "{}--{}{}/{}/{}/{}",
@@ -194,7 +209,7 @@ mod tests {
             local_vdt.end_date_time.unwrap(),
             ":".to_string() + &*time_step.to_string(),
             parameters.join(","),
-            locations,
+            coord_str,
             Format::CSV.to_string()
         );
         println!(">>>>>>>>>> url_fragment: {:?}", url_fragment);
@@ -220,20 +235,18 @@ mod tests {
                     let mut rdr = csv::ReaderBuilder::new()
                         .delimiter(b';')
                         .from_reader(body.as_bytes());
+                    
                     response_body
-                        .populate_records(&mut rdr, parameters.len())
+                        .csv_to_polars(&mut rdr)
                         .await
                         .unwrap();
-                    println!(">>>>>>>>>> ResponseBody:\n{}", response_body);
+                    println!(">>>>>>>>>> ResponseBody:\n{:?}", response_body);
 
                     print!(">>>>>>>>>> ResponseHeaders:\n");
-                    println!("{}", response_body.response_headers.to_vec().join(","));
+                    println!("{}", response_body.response_header.to_vec().join(","));
 
                     print!("\n>>>>>>>>>> ResponseRecords:\n");
-                    for response_record in response_body.response_records {
-                        println!("{:#?}", response_record);
-                    }
-
+                    println!("{:?}", response_body.response_df);
                     assert_eq!(status.as_str(), "200");
                     assert_ne!(body, "");
                 }
