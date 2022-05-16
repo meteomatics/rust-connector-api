@@ -1,6 +1,7 @@
 use crate::connector_error::ConnectorError;
 use chrono::{DateTime, FixedOffset, Local, Utc};
 use std::fmt::{Display, Formatter};
+use derive_builder::Builder;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum VDTOffset {

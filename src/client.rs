@@ -137,7 +137,9 @@ impl APIClient {
             Err(err) => Err(err),
         }
     }
+
 }
+
 async fn build_url(url_fragment: &str) -> Result<Url, ParseError> {
     let base_url = Url::parse(DEFAULT_API_BASE_URL).expect("Base URL is known to be valid");
     let full_url = base_url.join(url_fragment)?;
@@ -158,8 +160,7 @@ async fn coords_to_str(coords: Vec<Vec<f32>>) -> String {
 #[cfg(test)]
 mod tests {
 
-    use crate::configuration::api_client::coords_to_str;
-    use crate::configuration::api_client::APIClient;
+    use crate::APIClient;
     use crate::connector_components::format::Format;
     use crate::entities::connector_response::ResponseBody;
     use crate::valid_date_time::{PeriodTime, VDTOffset, ValidDateTime, ValidDateTimeBuilder};
@@ -199,7 +200,7 @@ mod tests {
 
         // Create Locations
         let coords = vec![vec![52.520551, 13.461804]];
-        let coord_str = coords_to_str(coords).await;
+        let coord_str = crate::client::coords_to_str(coords).await;
 
         let url_fragment = &*format!(
             "{}--{}{}/{}/{}/{}",
