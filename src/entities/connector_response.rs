@@ -1,6 +1,3 @@
-use csv::Reader;
-use std::io::Read;
-use tempfile::tempdir;
 use polars::prelude::*;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -31,28 +28,7 @@ impl ResponseBody {
         self.response_header.push(header);
     }
 
-    pub async fn csv_to_polars<R: Read>(
-        &mut self,
-        rdr: &mut Reader<R>,
-    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
-
-        // Create a directory inside of `std::env::temp_dir()`.
-        let dir = tempdir()?;
-
-        let file_path = dir.path().join("http_response.csv");
-        // Create a file inside of `std::env::temp_dir()`.
-        let mut wtr = csv::Writer::from_path(&file_path).unwrap();
-
-        for rec in rdr.records() {
-            let record = rec?;
-            wtr.write_record(&record)?;
-
-        }
-        wtr.flush()?;
-        self.response_df = CsvReader::from_path(file_path)?
-        .infer_schema(None)
-        .has_header(true)
-        .finish()?;
-        Ok(())
+    pub fn add_dataframe(&mut self, df: polars::prelude::DataFrame) {
+        self.response_df = df;
     }
 }

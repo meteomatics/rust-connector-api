@@ -33,7 +33,7 @@ impl APIClient {
         parameters: Vec<String>,
         coordinates: Vec<Vec<f32>>,
         optionals: Option<Vec<String>>,
-    ) -> Result<ConnectorResponse, ConnectorError> {
+    ) -> Result<ConnectorResponse, Box<dyn std::error::Error>> {
 
         let coords_str = coords_to_str(coordinates).await;
 
@@ -66,19 +66,20 @@ impl APIClient {
                 StatusCode::OK => {
                     let prefix_headers = vec!["validdate".to_string()];
                     let connector_response: ConnectorResponse = self
-                        .create_response(response, prefix_headers, parameters)
+                        .response_to_dataframe(response, prefix_headers, parameters)
                         .await?;
+          
                     Ok(connector_response)
                 }
-                status => Err(ConnectorError::HttpError(
+                status => Err(Box::new(ConnectorError::HttpError(
                     status.to_string(),
                     response.text().await.unwrap(),
                     status,
-                )),
+                ))),
             },
-            Err(connector_error) => Err(ConnectorError::ApiError {
+            Err(connector_error) => Err(Box::new(ConnectorError::ApiError {
                 source: connector_error,
-            }),
+            })),
         }
     }
     
@@ -96,18 +97,15 @@ impl APIClient {
             .await
     }
 
-    async fn create_response(
+    async fn response_to_dataframe(
         &self,
         response: Response,
         prefix_headers: Vec<String>,
         parameters: Vec<String>,
-    ) -> Result<ConnectorResponse, ConnectorError> {
+    ) -> Result<ConnectorResponse,  polars::error::PolarsError> {
         let status = response.status();
-        // println!(">>>>>>>>>> reqwest status: {}", status);
-        // println!(">>>>>>>>>> reqwest headers:\n{:#?}", response.headers());
 
         let body = response.text().await.unwrap();
-        // println!(">>>>>>>>>> reqwest body:\n{}", body);
 
         let mut response_body: ResponseBody = ResponseBody::new();
         for header in prefix_headers {
@@ -117,26 +115,26 @@ impl APIClient {
             response_body.add_header(p_value);
         }
 
-        let mut rdr = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .delimiter(b';')
-            .from_reader(body.as_bytes());
-        
-        // the various errors thrown by csv_to_polars are converted 
-        // to ConnectorError using map_err().
-        let result_body = response_body
-            .csv_to_polars(&mut rdr)
-            .await
-            .map_err(|err| ConnectorError::GenericError(err));
-        // println!(">>>>>>>>>> result body:\n{}", result_body);
+        let file = std::io::Cursor::new(&body);
+        use polars::prelude::*; 
+        let df = polars::io::csv::CsvReader::new(file)
+            .infer_schema(Some(100))
+            .with_delimiter(b';')
+            .has_header(true)
+            .with_parse_dates(false)
+            .with_ignore_parser_errors(false)
+            .finish();
 
-        match result_body {
-            Ok(_) => Ok(ConnectorResponse {
-                response_body,
-                http_status_code: status.as_str().to_string(),
-                http_status_message: status.to_string(),
-            }),
-            Err(connector_error) => Err(connector_error),
+        match df {
+            Ok(df) => {
+                response_body.add_dataframe(df);
+                Ok(ConnectorResponse {
+                    response_body,
+                    http_status_code: status.as_str().to_string(),
+                    http_status_message: status.to_string(),
+                })
+            },
+            Err(err) => Err(err),
         }
     }
 }
@@ -178,19 +176,13 @@ mod tests {
         dotenv().ok();
         let api_key: String = env::var("METEOMATICS_PW").unwrap();
         let api_user: String = env::var("METEOMATICS_USER").unwrap();
-
-        // Change to correct username and password.
         let api_client = APIClient::new(
             api_user,
             api_key,
             10,
         );
-        println!(">>>>>>>>>> api_client: {:?}", api_client);
 
         let now = Local::now();
-        let yesterday = now.clone() - Duration::days(1);
-        println!(">>>>>>>>>> yesterday (local) {:?}", yesterday);
-        println!(">>>>>>>>>> now (local) {:?}", now);
         let yesterday = VDTOffset::Local(now.clone() - Duration::days(1));
         let now = VDTOffset::Local(now);
         let time_step = PeriodTime::Hours(1);
@@ -207,7 +199,6 @@ mod tests {
 
         // Create Locations
         let coords = vec![vec![52.520551, 13.461804]];
-        
         let coord_str = coords_to_str(coords).await;
 
         let url_fragment = &*format!(
@@ -222,14 +213,12 @@ mod tests {
         println!(">>>>>>>>>> url_fragment: {:?}", url_fragment);
 
         let result = api_client.do_http_get(url_fragment).await;
-        // println!("response: {:?}", response);
 
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
                     let status = response.status();
                     println!(">>>>>>>>>> reqwest status: {}", status);
-                    // println!(">>>>>>>>>> reqwest headers:\n{:#?}", response.headers());
 
                     let body = response.text().await.unwrap();
                     println!(">>>>>>>>>> reqwest body:\n{}", body);
@@ -238,15 +227,7 @@ mod tests {
                     for p_value in parameters.clone() {
                         response_body.add_header(p_value);
                     }
-
-                    let mut rdr = csv::ReaderBuilder::new()
-                        .delimiter(b';')
-                        .from_reader(body.as_bytes());
                     
-                    response_body
-                        .csv_to_polars(&mut rdr)
-                        .await
-                        .unwrap();
                     println!(">>>>>>>>>> ResponseBody:\n{:?}", response_body);
 
                     print!(">>>>>>>>>> ResponseHeaders:\n");
