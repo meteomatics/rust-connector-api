@@ -83,3 +83,6 @@ Temporary Items
 
 # API Credentials
 .env
+
+# Visual Studio Launch Configuration
+.vscode/launch.json
