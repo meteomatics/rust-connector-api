@@ -4,6 +4,7 @@ mod entities;
 
 pub use connector_components::*;
 pub use crate::entities::*;
+use entities::connector_error::ConnectorError;
 
 use crate::configuration::api_client::APIClient;
 use crate::connector_response::ConnectorResponse;
@@ -30,7 +31,7 @@ impl MeteomaticsConnector {
         parameters: Vec<String>,
         coordinates: Vec<Vec<f32>>,
         optionals: Option<Vec<String>>,
-    ) -> Result<ConnectorResponse, Box<dyn std::error::Error>> {
+    ) -> Result<ConnectorResponse, ConnectorError> {
         self.api_client
             .query_time_series(vdt, parameters, coordinates, optionals)
             .await
@@ -38,6 +39,10 @@ impl MeteomaticsConnector {
 }
 
 // Unit testing section
+// TODO: Create more meaningful tests
+// TODO: Add option to query for a grid
+// TODO: Add option to query for a grid timeseries
+// TODO: Add more meaningful errors. 
 #[cfg(test)]
 mod tests {
 

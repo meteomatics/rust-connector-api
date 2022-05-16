@@ -33,7 +33,7 @@ impl APIClient {
         parameters: Vec<String>,
         coordinates: Vec<Vec<f32>>,
         optionals: Option<Vec<String>>,
-    ) -> Result<ConnectorResponse, Box<dyn std::error::Error>> {
+    ) -> Result<ConnectorResponse, ConnectorError> {
 
         let coords_str = coords_to_str(coordinates).await;
 
@@ -71,15 +71,15 @@ impl APIClient {
           
                     Ok(connector_response)
                 }
-                status => Err(Box::new(ConnectorError::HttpError(
+                status => Err(ConnectorError::HttpError(
                     status.to_string(),
                     response.text().await.unwrap(),
                     status,
-                ))),
+                )),
             },
-            Err(connector_error) => Err(Box::new(ConnectorError::ApiError {
+            Err(connector_error) => Err(ConnectorError::ApiError {
                 source: connector_error,
-            })),
+            }),
         }
     }
     

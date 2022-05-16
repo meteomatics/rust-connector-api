@@ -14,7 +14,18 @@ pub enum ConnectorError {
     #[error("Library error: `{0}`")]
     LibraryError(String),
 
+    /// Polars error.
+    #[error("Polars error")]
+    PolarsError,
+
     /// Generic error.
     #[error(transparent)]
     GenericError(#[from] Box<dyn std::error::Error>),
+}
+
+
+impl From<polars::error::PolarsError> for ConnectorError {
+    fn from(_: polars::error::PolarsError) -> Self {
+        ConnectorError::PolarsError
+    }
 }
