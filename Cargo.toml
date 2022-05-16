@@ -19,7 +19,6 @@ chrono = "0.4"
 derive_builder = "0.10"
 thiserror = "1.0"
 polars = "0.21.1"
-tempfile = "3.3.0"
 dotenv = "0.15.0"
 
 [dev-dependencies]
