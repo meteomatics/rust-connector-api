@@ -1,11 +1,11 @@
 use crate::errors::ConnectorError;
 use reqwest::{Client, Response, StatusCode};
 use url::{ParseError, Url};
+use crate::location::Point;
 
 const DEFAULT_API_BASE_URL: &str = "https://api.meteomatics.com";
 
-/// This wraps around the API functionality
-/// The Client itself uses the reqwest crate
+/// This is the entry point for users of the library.
 /// Please be aware that the password and username are **not** encrypted!
 #[derive(Clone, Debug)]
 pub struct APIClient {
@@ -30,23 +30,22 @@ impl APIClient {
         }
     }
 
-    /// Use this to get a DataFrame from the API for a series of 
-    /// coordinates (e.g. 47.423336, 9.377225) or
-    /// postal codes (e.g. postal_CH9000)
-    /// This allows to specify optional query information that is 
-    /// passed at the end of the URL, after a '?' symbol (e.g.  /html?model=mix)
+    /// Use this to get a DataFrame from the API for a series of coordinates 
+    /// (e.g. 47.423336, 9.377225) or postal codes (e.g. postal_CH9000).
+    /// Users can specify optional parameters. These parameters are then inserted
+    /// at the end of the URL (e.g.  /html?**model=mix**)
     pub async fn query_time_series(
         &self,
         start_date: &chrono::DateTime<chrono::Utc>,
         end_date: &chrono::DateTime<chrono::Utc>,
         interval: &chrono::Duration,
         parameters: &Vec<String>,
-        coordinates: &Vec<Vec<f64>>,
+        coordinates: &Vec<Point>,
         optionals: &Option<Vec<String>>,
     ) -> Result<polars::frame::DataFrame, ConnectorError> {
 
         // Create the coordinates
-        let coords_str = coords_to_str(&coordinates).await;
+        let coords_str = points_to_str(&coordinates).await;
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_query_specs(
@@ -60,7 +59,6 @@ impl APIClient {
         let result = self.do_http_get(full_url).await;
 
         // Match the result
-        // TODO: Check this match statement, when is ApiError produced?
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
@@ -81,7 +79,7 @@ impl APIClient {
         }
     }
     
-    /// This function does the heavy lifting of building the final url
+    /// This function handles the actual http request using the reqwest crate. 
     async fn do_http_get(&self, full_url: Url) -> Result<Response, reqwest::Error> {
         self.http_client
             .get(full_url)
@@ -149,18 +147,11 @@ async fn build_url(url_fragment: &str) -> Result<Url, ParseError> {
     Ok(full_url)
 }
 
-async fn coords_to_str(coords: &Vec<Vec<f64>>) -> String {
-    let coords_str: Vec<String> = coords.iter()
-        .map(
-            |x| {
-                let lat = x[0];
-                let lon = x[1];
-                format!("{},{}", lat, lon)
-            }
-        )
-        .collect();
-    coords_str.join("+")
+
+async fn points_to_str(coords: &Vec<Point>) -> String {
+    coords.iter().map(|p| format!("{}", p)).collect::<Vec<String>>().join("+")
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -170,12 +161,15 @@ mod tests {
     use std::env;
     use chrono::prelude::*;
     use chrono::Duration;
+    use crate::location::Point;
 
     #[tokio::test]
     // checks if the location specifier is correctly created
     async fn check_locations_string() {
-        let coords: Vec<Vec<f64>> = vec![vec![52.520551, 13.461804], vec![-52.520551, 13.461804]];
-        let coord_str = crate::client::coords_to_str(&coords).await;
+        let p1: Point = Point { lat: 52.520551, lon: 13.461804};
+        let p2: Point = Point { lat: -52.520551, lon: 13.461804};
+        let coords: Vec<Point> = vec![p1, p2];
+        let coord_str = crate::client::points_to_str(&coords).await;
         assert_eq!("52.520551,13.461804+-52.520551,13.461804", coord_str);
     }
 
@@ -188,8 +182,9 @@ mod tests {
         let interval = Duration::hours(1);
 
         let parameters: Vec<String> = vec![String::from("t_2m:C")];
-        let coords = vec![vec![52.520551, 13.461804]];
-        let coord_str = crate::client::coords_to_str(&coords).await;
+        let p1: Point = Point { lat: 52.520551, lon: 13.461804};
+        let coords: Vec<Point> = vec![p1];
+        let coord_str = crate::client::points_to_str(&coords).await;
 
         let query_s = crate::client::build_query_specs(
             &start_date, &end_date, &interval, &parameters, &coord_str, &None

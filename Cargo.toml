@@ -10,13 +10,10 @@ license = "MIT"
 [dependencies]
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
 tokio = { version = "1", features = ["full"] }
-csv = "1.1"
-serde = { version = "1", features = ["derive"] }
 url = "2"
 strum = { version = "0.21", features = ["derive"] }
 strum_macros = "0.21"
 chrono = "0.4"
-derive_builder = "0.10"
 thiserror = "1.0"
 polars = "0.21.1"
 dotenv = "0.15.0"

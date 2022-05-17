@@ -2,12 +2,12 @@ use rust_connector_api::APIClient;
 use chrono::{Duration, Utc, prelude::*};
 use dotenv::dotenv;
 use std::env;
+use rust_connector_api::location::Point;
 
 // Unit testing section
 // TODO: Create more meaningful tests
 // TODO: Add option to query for a grid
 // TODO: Add option to query for a grid timeseries
-// TODO: Add more meaningful errors. 
 #[tokio::test]
 async fn call_query_time_series_with_options() {
     println!("\n##### call_query_time_series_with_options:");
@@ -35,7 +35,9 @@ async fn call_query_time_series_with_options() {
     parameters.push(String::from("precip_1h:mm"));
 
     // Create Locations
-    let coordinates: Vec<Vec<f64>> = vec![vec![46.685, 7.953], vec![46.759, -76.027]];
+    let p1: Point = Point { lat: 52.520551, lon: 13.461804};
+    let p2: Point = Point { lat: -52.520551, lon: 13.461804};
+    let coords: Vec<Point> = vec![p1, p2];
 
     // Create Optionals
     let mut optionals = Vec::new();
@@ -45,7 +47,7 @@ async fn call_query_time_series_with_options() {
     // Call endpoint
     let result = meteomatics_connector
         .query_time_series(
-            &start_date, &end_date, &interval, &parameters, &coordinates, &Option::from(optionals)
+            &start_date, &end_date, &interval, &parameters, &coords, &Option::from(optionals)
         )
         .await;
 
@@ -89,7 +91,9 @@ async fn call_query_time_series_without_options() {
     parameters.push(String::from("precip_1h:mm"));
 
     // Create Locations
-    let coords: Vec<Vec<f64>> = vec![vec![47.419708, 9.358478]];
+    let p1: Point = Point { lat: 52.520551, lon: 13.461804};
+    let p2: Point = Point { lat: -52.520551, lon: 13.461804};
+    let coords: Vec<Point> = vec![p1, p2];
 
     // Call endpoint
     let result = meteomatics_connector
