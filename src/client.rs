@@ -1,7 +1,4 @@
-use crate::connector_error::ConnectorError;
-use crate::connector_response::{ConnectorResponse, ResponseBody};
-use crate::format::Format;
-use crate::valid_date_time::ValidDateTime;
+use crate::errors::ConnectorError;
 use reqwest::{Client, Response, StatusCode};
 use url::{ParseError, Url};
 
@@ -16,10 +13,12 @@ pub struct APIClient {
 
 impl APIClient {
     pub fn new(username: String, password: String, timeout_seconds: u64) -> Self {
+        // safe to use unwrap, since we want to panic if the client builder fails.
         let http_client = Client::builder()
             .timeout(std::time::Duration::from_secs(timeout_seconds))
             .build()
             .unwrap();
+
         Self {
             http_client,
             username,
@@ -29,43 +28,34 @@ impl APIClient {
 
     pub async fn query_time_series(
         &self,
-        vdt: ValidDateTime,
-        parameters: Vec<String>,
-        coordinates: Vec<Vec<f64>>,
-        optionals: Option<Vec<String>>,
-    ) -> Result<ConnectorResponse, ConnectorError> {
+        start_date: &chrono::DateTime<chrono::Utc>,
+        end_date: &chrono::DateTime<chrono::Utc>,
+        interval: &chrono::Duration,
+        parameters: &Vec<String>,
+        coordinates: &Vec<Vec<f64>>,
+        optionals: &Option<Vec<String>>,
+    ) -> Result<polars::frame::DataFrame, ConnectorError> {
 
-        let coords_str = coords_to_str(coordinates).await;
-        let query_specs = format!(
-            "{}/{}/{}/{}",
-            vdt.format()?,
-            parameters.join(","),
-            coords_str,
-            Format::CSV.to_string()
-        );
+        // Create the coordinates
+        let coords_str = coords_to_str(&coordinates).await;
 
-        let query_specs = match optionals {
-            None => query_specs,
-            Some(_) => {
-                format!(
-                    "{}?{}",
-                    query_specs,
-                    optionals.unwrap().join("&")
-                )
-            }
-        };
+        // Create the query specifications (time, location, etc.)
+        let query_specs = build_query_specs(
+            &start_date, &end_date, &interval, &parameters, &coords_str, &optionals
+        ).await;
 
+        // Get the query result
         let result = self.do_http_get(&query_specs).await;
 
+        // Match the result
+        // TODO: Check this match statement, when is ApiError produced?
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
-                    let prefix_headers = vec!["validdate".to_string()];
-                    let connector_response: ConnectorResponse = self
-                        .response_to_dataframe(response, prefix_headers, parameters)
+                    let dataframe: polars::frame::DataFrame = parse_response_to_dataframe(response)
                         .await?;
-          
-                    Ok(connector_response)
+        
+                    Ok(dataframe)
                 }
                 status => Err(ConnectorError::HttpError(
                     status.to_string(),
@@ -92,48 +82,58 @@ impl APIClient {
             .send()
             .await
     }
+}
 
-    async fn response_to_dataframe(
-        &self,
-        response: Response,
-        prefix_headers: Vec<String>,
-        parameters: Vec<String>,
-    ) -> Result<ConnectorResponse,  polars::error::PolarsError> {
-        let status = response.status();
+async fn parse_response_to_dataframe(
+    response: Response,
+) -> Result<polars::frame::DataFrame,  polars::error::PolarsError> {
+    // Get the response text:
+    let body = response.text().await.unwrap();
 
-        let body = response.text().await.unwrap();
+    // Parse the response to a DataFrame
+    let file = std::io::Cursor::new(&body);
+    use polars::prelude::*; 
+    let df = polars::io::csv::CsvReader::new(file)
+        .infer_schema(Some(100))
+        .with_delimiter(b';')
+        .has_header(true)
+        .with_parse_dates(false)
+        .with_ignore_parser_errors(false)
+        .finish();
+    df 
+}
 
-        let mut response_body: ResponseBody = ResponseBody::new();
-        for header in prefix_headers {
-            response_body.add_header(header);
+async fn build_query_specs(
+    start_date: &chrono::DateTime<chrono::Utc>,
+    end_date: &chrono::DateTime<chrono::Utc>,
+    interval: &chrono::Duration,
+    parameters: &Vec<String>,
+    coords_str: &str,
+    optionals: &Option<Vec<String>>
+) -> String {
+
+    let query_specs = format!(
+        "{}--{}:{}/{}/{}/csv",
+        start_date.to_rfc3339(),
+        end_date.to_rfc3339(),
+        interval.to_string(),
+        parameters.join(","),
+        coords_str,
+    );
+
+    // Handles optional parameters 
+    let query_specs = match optionals {
+        None => query_specs,
+        Some(_) => {
+            format!(
+                "{}?{}",
+                query_specs,
+                optionals.as_ref().unwrap().join("&")
+            )
         }
-        for p_value in parameters.clone() {
-            response_body.add_header(p_value);
-        }
-
-        let file = std::io::Cursor::new(&body);
-        use polars::prelude::*; 
-        let df = polars::io::csv::CsvReader::new(file)
-            .infer_schema(Some(100))
-            .with_delimiter(b';')
-            .has_header(true)
-            .with_parse_dates(false)
-            .with_ignore_parser_errors(false)
-            .finish();
-
-        match df {
-            Ok(df) => {
-                response_body.add_dataframe(df);
-                Ok(ConnectorResponse {
-                    response_body,
-                    http_status_code: status.as_str().to_string(),
-                    http_status_message: status.to_string(),
-                })
-            },
-            Err(err) => Err(err),
-        }
-    }
-
+    };
+    
+    return query_specs
 }
 
 async fn build_url(url_fragment: &str) -> Result<Url, ParseError> {
@@ -142,7 +142,7 @@ async fn build_url(url_fragment: &str) -> Result<Url, ParseError> {
     Ok(full_url)
 }
 
-async fn coords_to_str(coords: Vec<Vec<f64>>) -> String {
+async fn coords_to_str(coords: &Vec<Vec<f64>>) -> String {
     let coords_str: Vec<String> = coords.iter()
         .map(
             |x| {
@@ -159,25 +159,70 @@ async fn coords_to_str(coords: Vec<Vec<f64>>) -> String {
 mod tests {
 
     use crate::APIClient;
-    use crate::connector_components::format::Format;
-    use crate::entities::connector_response::ResponseBody;
-    use crate::valid_date_time::{PeriodTime, VDTOffset, ValidDateTime, ValidDateTimeBuilder};
-    use chrono::{Duration, Local};
-    use reqwest::StatusCode;
     use dotenv::dotenv;
     use std::env;
+    use chrono::prelude::*;
+    use chrono::Duration;
 
     #[tokio::test]
     // checks if the location specifier is correctly created
     async fn check_locations_string() {
         let coords: Vec<Vec<f64>> = vec![vec![52.520551, 13.461804], vec![-52.520551, 13.461804]];
-        let coord_str = crate::client::coords_to_str(coords).await;
+        let coord_str = crate::client::coords_to_str(&coords).await;
         assert_eq!("52.520551,13.461804+-52.520551,13.461804", coord_str);
     }
 
     #[tokio::test]
-    async fn client_fires_get_request_to_base_url() {
-        println!("\n##### client_fires_get_request_to_base_url:");
+    // checks if the query specs are correctly built
+    async fn check_query_specs_string() {
+        // seconds
+        let start_date = Utc.ymd(2022, 5, 17).and_hms(12, 00, 00);
+        let end_date = start_date + Duration::days(1);
+        let interval = Duration::hours(1);
+
+        let parameters: Vec<String> = vec![String::from("t_2m:C")];
+        let coords = vec![vec![52.520551, 13.461804]];
+        let coord_str = crate::client::coords_to_str(&coords).await;
+
+        let query_s = crate::client::build_query_specs(
+            &start_date, &end_date, &interval, &parameters, &coord_str, &None
+        ).await;
+        assert_eq!(
+            "2022-05-17T12:00:00+00:00--2022-05-18T12:00:00+00:00:PT3600S/t_2m:C/52.520551,13.461804/csv", 
+            query_s
+        );
+        
+        // microseconds
+        let start_date = Utc.ymd(2022, 5, 17).and_hms_micro(12, 00, 00, 453_829);
+        let end_date = start_date + Duration::days(1);
+        let interval = Duration::hours(1);
+
+        let query_ms = crate::client::build_query_specs(
+            &start_date, &end_date, &interval, &parameters, &coord_str, &None
+        ).await;
+        assert_eq!(
+            "2022-05-17T12:00:00.453829+00:00--2022-05-18T12:00:00.453829+00:00:PT3600S/t_2m:C/52.520551,13.461804/csv", 
+            query_ms
+        );
+
+        // nanoseconds
+        let start_date = Utc.ymd(2022, 5, 17).and_hms_nano(12, 00, 00, 453_829_123);
+        let end_date = start_date + Duration::days(1);
+        let interval = Duration::hours(1);
+
+        let query_ns = crate::client::build_query_specs(
+            &start_date, &end_date, &interval, &parameters, &coord_str, &None
+        ).await;
+        assert_eq!(
+            "2022-05-17T12:00:00.453829123+00:00--2022-05-18T12:00:00.453829123+00:00:PT3600S/t_2m:C/52.520551,13.461804/csv", 
+            query_ns
+        );
+    }
+
+    #[tokio::test]
+    // TODO: This test does way more than just testing the base url!
+    async fn client_fires_get_request() {
+        let query = String::from("https://api.meteomatics.com/2022-05-17T12:00:00.000Z/t_2m:C/51.5073219,-0.1276474/csv");
 
         // Credentials
         dotenv().ok();
@@ -189,67 +234,23 @@ mod tests {
             10,
         );
 
-        let now = Local::now();
-        let yesterday = VDTOffset::Local(now.clone() - Duration::days(1));
-        let now = VDTOffset::Local(now);
-        let time_step = PeriodTime::Hours(1);
-        let local_vdt: ValidDateTime = ValidDateTimeBuilder::default()
-            .start_date_time(yesterday)
-            .end_date_time(now)
-            .time_step(time_step)
-            .build()
-            .unwrap();
-
-        // Create Parameters
-        let mut parameters = Vec::new();
-        parameters.push(String::from("t_2m:C"));
-
-        // Create Locations
-        let coords = vec![vec![52.520551, 13.461804]];
-        let coord_str = crate::client::coords_to_str(coords).await;
-
-        let url_fragment = &*format!(
-            "{}--{}{}/{}/{}/{}",
-            local_vdt.start_date_time,
-            local_vdt.end_date_time.unwrap(),
-            ":".to_string() + &*time_step.to_string(),
-            parameters.join(","),
-            coord_str,
-            Format::CSV.to_string()
-        );
-        println!(">>>>>>>>>> url_fragment: {:?}", url_fragment);
-
-        let result = api_client.do_http_get(url_fragment).await;
+        let result = api_client.do_http_get(&query).await;
 
         match result {
+            // reqwest got a HTTP response
             Ok(response) => match response.status() {
-                StatusCode::OK => {
+                reqwest::StatusCode::OK => {
                     let status = response.status();
-                    println!(">>>>>>>>>> reqwest status: {}", status);
-
-                    let body = response.text().await.unwrap();
-                    println!(">>>>>>>>>> reqwest body:\n{}", body);
-
-                    let mut response_body: ResponseBody = ResponseBody::new();
-                    for p_value in parameters.clone() {
-                        response_body.add_header(p_value);
-                    }
-                    
-                    println!(">>>>>>>>>> ResponseBody:\n{:?}", response_body);
-
-                    print!(">>>>>>>>>> ResponseHeaders:\n");
-                    println!("{}", response_body.response_header.to_vec().join(","));
-
-                    print!("\n>>>>>>>>>> ResponseRecords:\n");
-                    println!("{:?}", response_body.response_df);
                     assert_eq!(status.as_str(), "200");
-                    assert_ne!(body, "");
                 }
+                // matches all other non-ok status codes. 
+                // !This is not to say that reqwest raised an error!
                 status => {
                     println!(">>>>>>>>>> StatusCode error: {:#?}", status.to_string());
                     assert_eq!(status.as_str(), "200"); // Assert to fail
                 }
             },
+            // reqwest raised an error
             Err(ref error) => {
                 println!(">>>>>>>>>> error: {:#?}", error);
                 assert!(result.is_ok());

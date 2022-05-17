@@ -1,8 +1,5 @@
-pub mod connector_components;
-pub mod entities;
+pub mod errors;
 pub mod client;
-
 pub use client::APIClient;
-pub use connector_components::*;
-pub use entities::*;
 
+// TODO: check where to pass references and where to pass ownership
