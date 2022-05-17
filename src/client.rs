@@ -4,6 +4,9 @@ use url::{ParseError, Url};
 
 const DEFAULT_API_BASE_URL: &str = "https://api.meteomatics.com";
 
+/// This wraps around the API functionality
+/// The Client itself uses the reqwest crate
+/// Please be aware that the password and username are **not** encrypted!
 #[derive(Clone, Debug)]
 pub struct APIClient {
     http_client: Client,
@@ -12,6 +15,7 @@ pub struct APIClient {
 }
 
 impl APIClient {
+    /// Creates a new instance of the APIClient
     pub fn new(username: String, password: String, timeout_seconds: u64) -> Self {
         // safe to use unwrap, since we want to panic if the client builder fails.
         let http_client = Client::builder()
@@ -26,6 +30,11 @@ impl APIClient {
         }
     }
 
+    /// Use this to get a DataFrame from the API for a series of 
+    /// coordinates (e.g. 47.423336, 9.377225) or
+    /// postal codes (e.g. postal_CH9000)
+    /// This allows to specify optional query information that is 
+    /// passed at the end of the URL, after a '?' symbol (e.g.  /html?model=mix)
     pub async fn query_time_series(
         &self,
         start_date: &chrono::DateTime<chrono::Utc>,
@@ -44,8 +53,11 @@ impl APIClient {
             &start_date, &end_date, &interval, &parameters, &coords_str, &optionals
         ).await;
 
+        // Create the complete URL
+        let full_url = build_url(&query_specs).await.map_err(|_| ConnectorError::ParseError)?;
+
         // Get the query result
-        let result = self.do_http_get(&query_specs).await;
+        let result = self.do_http_get(full_url).await;
 
         // Match the result
         // TODO: Check this match statement, when is ApiError produced?
@@ -69,13 +81,8 @@ impl APIClient {
         }
     }
     
-    async fn do_http_get(&self, url_fragment: &str) -> Result<Response, reqwest::Error> {
-        let full_url = build_url(url_fragment)
-            .await
-            .expect("URL fragment must be valid");
-
-        println!(">>>>>>>>>> full_url: {}", full_url);
-
+    /// This function does the heavy lifting of building the final url
+    async fn do_http_get(&self, full_url: Url) -> Result<Response, reqwest::Error> {
         self.http_client
             .get(full_url)
             .basic_auth(&self.username, Some(String::from(&self.password)))
@@ -86,7 +93,7 @@ impl APIClient {
 
 async fn parse_response_to_dataframe(
     response: Response,
-) -> Result<polars::frame::DataFrame,  polars::error::PolarsError> {
+) -> Result<polars::frame::DataFrame, polars::error::PolarsError> {
     // Get the response text:
     let body = response.text().await.unwrap();
 
@@ -222,7 +229,9 @@ mod tests {
     #[tokio::test]
     // TODO: This test does way more than just testing the base url!
     async fn client_fires_get_request() {
-        let query = String::from("https://api.meteomatics.com/2022-05-17T12:00:00.000Z/t_2m:C/51.5073219,-0.1276474/csv");
+        let query = crate::client::build_url(
+            &String::from("2022-05-17T12:00:00.000Z/t_2m:C/51.5073219,-0.1276474/csv")
+        ).await.unwrap();
 
         // Credentials
         dotenv().ok();
@@ -234,7 +243,7 @@ mod tests {
             10,
         );
 
-        let result = api_client.do_http_get(&query).await;
+        let result = api_client.do_http_get(query).await;
 
         match result {
             // reqwest got a HTTP response

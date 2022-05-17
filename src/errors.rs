@@ -21,11 +21,21 @@ pub enum ConnectorError {
     /// Generic error.
     #[error(transparent)]
     GenericError(#[from] Box<dyn std::error::Error>),
+
+    /// Parse error.
+    #[error("Parsing error")]
+    ParseError,
 }
 
 
 impl From<polars::error::PolarsError> for ConnectorError {
     fn from(_: polars::error::PolarsError) -> Self {
         ConnectorError::PolarsError
+    }
+}
+
+impl From<url::ParseError> for ConnectorError {
+    fn from(_: url::ParseError) -> Self {
+        ConnectorError::ParseError
     }
 }
