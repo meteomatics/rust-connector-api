@@ -31,35 +31,31 @@ impl APIClient {
         &self,
         vdt: ValidDateTime,
         parameters: Vec<String>,
-        coordinates: Vec<Vec<f32>>,
+        coordinates: Vec<Vec<f64>>,
         optionals: Option<Vec<String>>,
     ) -> Result<ConnectorResponse, ConnectorError> {
 
         let coords_str = coords_to_str(coordinates).await;
+        let query_specs = format!(
+            "{}/{}/{}/{}",
+            vdt.format()?,
+            parameters.join(","),
+            coords_str,
+            Format::CSV.to_string()
+        );
 
-        let url_fragment = match optionals {
-            None => {
-                format!(
-                    "{}/{}/{}/{}",
-                    vdt.format()?,
-                    parameters.join(","),
-                    coords_str,
-                    Format::CSV.to_string()
-                )
-            }
+        let query_specs = match optionals {
+            None => query_specs,
             Some(_) => {
                 format!(
-                    "{}/{}/{}/{}?{}",
-                    vdt.format()?,
-                    parameters.join(","),
-                    coords_str,
-                    Format::CSV.to_string(),
+                    "{}?{}",
+                    query_specs,
                     optionals.unwrap().join("&")
                 )
             }
         };
 
-        let result = self.do_http_get(&url_fragment).await;
+        let result = self.do_http_get(&query_specs).await;
 
         match result {
             Ok(response) => match response.status() {
@@ -146,14 +142,16 @@ async fn build_url(url_fragment: &str) -> Result<Url, ParseError> {
     Ok(full_url)
 }
 
-async fn coords_to_str(coords: Vec<Vec<f32>>) -> String {
-    let mut coords_str: Vec<String> = Vec::new();
-    for i in 0..coords.len() {
-        let elem = &coords[i];
-        let lat = elem[0];
-        let lon = elem[1];
-        coords_str.push(format!("{},{}", lat, lon));
-    }
+async fn coords_to_str(coords: Vec<Vec<f64>>) -> String {
+    let coords_str: Vec<String> = coords.iter()
+        .map(
+            |x| {
+                let lat = x[0];
+                let lon = x[1];
+                format!("{},{}", lat, lon)
+            }
+        )
+        .collect();
     coords_str.join("+")
 }
 
@@ -168,6 +166,13 @@ mod tests {
     use reqwest::StatusCode;
     use dotenv::dotenv;
     use std::env;
+
+    #[tokio::test]
+    async fn check_locations_string() {
+        let coords: Vec<Vec<f64>> = vec![vec![52.520551, 13.461804], vec![-52.520551, 13.461804]];
+        let coord_str = crate::client::coords_to_str(coords).await;
+        assert_eq!("52.520551,13.461804+-52.520551,13.461804", coord_str);
+    }
 
     #[tokio::test]
     async fn client_fires_get_request_to_base_url() {

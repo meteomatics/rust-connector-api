@@ -46,7 +46,7 @@ async fn call_query_time_series_with_options() {
     parameters.push(String::from("precip_1h:mm"));
 
     // Create Locations
-    let coordinates: Vec<Vec<f32>> = vec![vec![46.685, 7.953], vec![46.759, -76.027]];
+    let coordinates: Vec<Vec<f64>> = vec![vec![46.685, 7.953], vec![46.759, -76.027]];
 
     // Create Optionals
     let mut optionals = Vec::new();
@@ -123,7 +123,7 @@ async fn call_query_time_series_without_options() {
     parameters.push(String::from("precip_1h:mm"));
 
     // Create Locations
-    let coords: Vec<Vec<f32>> = vec![vec![47.419708, 9.358478]];
+    let coords: Vec<Vec<f64>> = vec![vec![47.419708, 9.358478]];
 
     // Call endpoint
     let result = meteomatics_connector
@@ -181,7 +181,7 @@ async fn use_period_date_and_time_step_simultaneously() {
     parameters.push(String::from("precip_1h:mm"));
 
     // Create Locations
-    let coords: Vec<Vec<f32>> = vec![vec![47.419708, 9.358478]];
+    let coords: Vec<Vec<f64>> = vec![vec![47.419708, 9.358478]];
 
     // Call endpoint
     let result = meteomatics_connector
