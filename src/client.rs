@@ -168,6 +168,7 @@ mod tests {
     use std::env;
 
     #[tokio::test]
+    // checks if the location specifier is correctly created
     async fn check_locations_string() {
         let coords: Vec<Vec<f64>> = vec![vec![52.520551, 13.461804], vec![-52.520551, 13.461804]];
         let coord_str = crate::client::coords_to_str(coords).await;
