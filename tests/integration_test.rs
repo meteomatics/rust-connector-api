@@ -2,7 +2,7 @@ use rust_connector_api::APIClient;
 use chrono::{Duration, Utc, prelude::*};
 use dotenv::dotenv;
 use std::env;
-use rust_connector_api::location::Point;
+use rust_connector_api::location::{Point, BBox};
 use polars::prelude::*;
 use std::io::Cursor;
 
@@ -118,11 +118,9 @@ async fn call_query_time_series_without_options() {
 async fn query_time_series_one_point_one_param() {
     // Reference data from python connector
     let s = r#"lat,lon,validdate,t_2m:C
-    47.11,11.47,2022-05-18T00:00:00Z,11.5
-    47.11,11.47,2022-05-18T06:00:00Z,10.3
-    47.11,11.47,2022-05-18T12:00:00Z,17.9
-    47.11,11.47,2022-05-18T18:00:00Z,15.7
-    47.11,11.47,2022-05-19T00:00:00Z,13.3
+    52.52,13.405,1989-11-09T18:00:00Z,6.8
+    52.52,13.405,1989-11-10T06:00:00Z,1.4
+    52.52,13.405,1989-11-10T18:00:00Z,5.3
     "#;
     let file = Cursor::new(s);
     let df_s = CsvReader::new(file)
@@ -146,17 +144,16 @@ async fn query_time_series_one_point_one_param() {
     );
 
     // Create time information
-    // 2022-05-18 00:00:00+00:00
-    let start_date = Utc.ymd(2022, 5, 18).and_hms_micro(0, 0, 0, 0);
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(6);
+    let interval = Duration::hours(12);
 
     // Create Parameters
     let mut parameters = Vec::new();
     parameters.push(String::from("t_2m:C"));
 
     // Create Locations
-    let p1: Point = Point { lat: 47.11, lon: 11.47};
+    let p1: Point = Point { lat: 52.52, lon: 13.405};
     let coords: Vec<Point> = vec![p1];
 
     // Call endpoint
@@ -173,11 +170,9 @@ async fn query_time_series_one_point_one_param() {
 async fn query_time_series_one_point_two_param() {
     // Reference data from python connector
     let s = r#"lat,lon,validdate,t_2m:C,precip_1h:mm
-    47.11,11.47,2022-05-18T00:00:00Z,11.5,0.000
-    47.11,11.47,2022-05-18T06:00:00Z,10.3,0.000
-    47.11,11.47,2022-05-18T12:00:00Z,17.9,0.000
-    47.11,11.47,2022-05-18T18:00:00Z,15.7,0.000
-    47.11,11.47,2022-05-19T00:00:00Z,13.3,0.000
+    52.52,13.405,1989-11-09T18:00:00Z,6.8,0.06
+    52.52,13.405,1989-11-10T06:00:00Z,1.4,0.0
+    52.52,13.405,1989-11-10T18:00:00Z,5.3,0.0
     "#;
     let file = Cursor::new(s);
     let df_s = CsvReader::new(file)
@@ -201,16 +196,15 @@ async fn query_time_series_one_point_two_param() {
     );
 
     // Create time information
-    // 2022-05-18 00:00:00+00:00
-    let start_date = Utc.ymd(2022, 5, 18).and_hms_micro(0, 0, 0, 0);
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(6);
+    let interval = Duration::hours(12);
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
 
     // Create Locations
-    let p1: Point = Point { lat: 47.11, lon: 11.47};
+    let p1: Point = Point { lat: 52.52, lon: 13.405};
     let coords: Vec<Point> = vec![p1];
 
     // Call endpoint
@@ -227,16 +221,12 @@ async fn query_time_series_one_point_two_param() {
 async fn query_time_series_two_point_two_param() {
     // Reference data from python connector
     let s = r#"lat,lon,validdate,t_2m:C,precip_1h:mm
-    47.11,11.47,2022-05-18T00:00:00Z,11.5,0.0
-    47.11,11.47,2022-05-18T06:00:00Z,10.3,0.0
-    47.11,11.47,2022-05-18T12:00:00Z,17.9,0.0
-    47.11,11.47,2022-05-18T18:00:00Z,15.7,0.0
-    47.11,11.47,2022-05-19T00:00:00Z,13.3,0.0
-    46.11,10.47,2022-05-18T00:00:00Z,6.7,0.0
-    46.11,10.47,2022-05-18T06:00:00Z,7.4,0.0
-    46.11,10.47,2022-05-18T12:00:00Z,10.6,0.0
-    46.11,10.47,2022-05-18T18:00:00Z,7.9,0.0
-    46.11,10.47,2022-05-19T00:00:00Z,7.2,0.0
+    52.5,13.4,1989-11-09T18:00:00Z,6.8,0.05
+    52.5,13.4,1989-11-10T06:00:00Z,1.4,0.0
+    52.5,13.4,1989-11-10T18:00:00Z,5.4,0.0
+    52.4,13.5,1989-11-09T18:00:00Z,6.9,0.0
+    52.4,13.5,1989-11-10T06:00:00Z,1.5,0.0
+    52.4,13.5,1989-11-10T18:00:00Z,5.3,0.0
     "#;
     let file = Cursor::new(s);
     let df_s = CsvReader::new(file)
@@ -260,17 +250,16 @@ async fn query_time_series_two_point_two_param() {
     );
 
     // Create time information
-    // 2022-05-18 00:00:00+00:00
-    let start_date = Utc.ymd(2022, 5, 18).and_hms_micro(0, 0, 0, 0);
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(6);
+    let interval = Duration::hours(12);
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
 
     // Create Locations
-    let p1: Point = Point { lat: 47.11, lon: 11.47};
-    let p2: Point = Point { lat: 46.11, lon: 10.47};
+    let p1: Point = Point { lat: 52.50, lon: 13.40};
+    let p2: Point = Point { lat: 52.40, lon: 13.50};
     let coords: Vec<Point> = vec![p1, p2];
 
     // Call endpoint
@@ -287,11 +276,9 @@ async fn query_time_series_two_point_two_param() {
 async fn query_time_series_one_postal_one_param() {
     // Reference data from python connector
     let s = r#"station_id,validdate,t_2m:C
-    postal_CH9000,2022-05-18T00:00:00Z,13.6
-    postal_CH9000,2022-05-18T06:00:00Z,14.0
-    postal_CH9000,2022-05-18T12:00:00Z,21.4
-    postal_CH9000,2022-05-18T18:00:00Z,20.3
-    postal_CH9000,2022-05-19T00:00:00Z,14.2
+    postal_CH9000,1989-11-09T18:00:00Z,4.6
+    postal_CH9000,1989-11-10T06:00:00Z,0.9
+    postal_CH9000,1989-11-10T18:00:00Z,3.1
     "#;
     let file = Cursor::new(s);
     let df_s = CsvReader::new(file)
@@ -315,10 +302,9 @@ async fn query_time_series_one_postal_one_param() {
     );
 
     // Create time information
-    // 2022-05-18 00:00:00+00:00
-    let start_date = Utc.ymd(2022, 5, 18).and_hms_micro(0, 0, 0, 0);
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(6);
+    let interval = Duration::hours(12);
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C")];
@@ -340,16 +326,12 @@ async fn query_time_series_one_postal_one_param() {
 async fn query_time_series_two_postal_two_param() {
     // Reference data from python connector
     let s = r#"station_id,validdate,t_2m:C,precip_1h:mm
-    postal_CH8000,2022-05-18T00:00:00Z,15.2,0.0
-    postal_CH8000,2022-05-18T06:00:00Z,15.6,0.0
-    postal_CH8000,2022-05-18T12:00:00Z,25.0,0.0
-    postal_CH8000,2022-05-18T18:00:00Z,23.5,0.0
-    postal_CH8000,2022-05-19T00:00:00Z,15.1,0.0
-    postal_CH9000,2022-05-18T00:00:00Z,13.6,0.0
-    postal_CH9000,2022-05-18T06:00:00Z,14.0,0.0
-    postal_CH9000,2022-05-18T12:00:00Z,21.4,0.0
-    postal_CH9000,2022-05-18T18:00:00Z,20.3,0.0
-    postal_CH9000,2022-05-19T00:00:00Z,14.2,0.0
+    postal_CH8000,1989-11-09T18:00:00Z,5.8,0.0
+    postal_CH8000,1989-11-10T06:00:00Z,3.1,0.0
+    postal_CH8000,1989-11-10T18:00:00Z,5.5,0.0
+    postal_CH9000,1989-11-09T18:00:00Z,4.6,0.0
+    postal_CH9000,1989-11-10T06:00:00Z,0.9,0.0
+    postal_CH9000,1989-11-10T18:00:00Z,3.1,0.0
     "#;
     let file = Cursor::new(s);
     let df_s = CsvReader::new(file)
@@ -373,10 +355,9 @@ async fn query_time_series_two_postal_two_param() {
     );
 
     // Create time information
-    // 2022-05-18 00:00:00+00:00
-    let start_date = Utc.ymd(2022, 5, 18).and_hms_micro(0, 0, 0, 0);
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(6);
+    let interval = Duration::hours(12);
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
@@ -387,6 +368,210 @@ async fn query_time_series_two_postal_two_param() {
     // Call endpoint
     let df_q = meteomatics_connector
         .query_time_series_postal(&start_date, &end_date, &interval, &parameters, &postal1, &None)
+        .await
+        .unwrap();
+    println!("Rust result: {:?}", df_q);
+    println!("Python result: {:?}", df_s);
+    assert!(df_s.frame_equal(&df_q));
+}
+
+#[tokio::test]
+async fn query_grid_pivoted() {
+    // This is a bit hacked, because the python connetor changes 'data' to 'lat'
+    let s = r#"data,13.4,13.45,13.5
+    52.5,6.8,6.9,6.9
+    52.45,6.8,6.8,6.9
+    52.4,6.8,6.9,6.9
+    "#;
+    let file = Cursor::new(s);
+    let df_s = CsvReader::new(file)
+        .infer_schema(Some(100))
+        .has_header(true)
+        .with_ignore_parser_errors(true)
+        .finish()
+        .unwrap();
+
+    // Query using rust connector
+    // Credentials
+    dotenv().ok();
+    let api_key: String = env::var("METEOMATICS_PW").unwrap();
+    let api_user: String = env::var("METEOMATICS_USER").unwrap();
+    
+    // Create API connector
+    let meteomatics_connector = APIClient::new(
+        api_user,
+        api_key,
+        10,
+    );
+
+    // Create time information
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+
+    // Create Parameters
+    let parameter = String::from("t_2m:C");
+
+    // Create Location
+    let bbox: BBox = BBox {
+        lat_min: 52.40,
+        lat_max: 52.50,
+        lon_min: 13.40,
+        lon_max: 13.50,
+        lat_res: 0.05,
+        lon_res: 0.05
+    };
+
+    // Call endpoint
+    let df_q = meteomatics_connector
+        .query_grid_pivoted(&start_date, &parameter, &bbox, &None)
+        .await
+        .unwrap();
+    println!("Rust result: {:?}", df_q);
+    println!("Python result: {:?}", df_s);
+    assert!(df_s.frame_equal(&df_q));
+}
+
+#[tokio::test]
+async fn query_grid_unpivoted() {
+    // directly downloaded from the API
+    // https://api.meteomatics.com/1989-11-09T18:00:00.000Z/t_2m:C,precip_1h:mm/52.50,13.40_52.40,13.50:0.05,0.05/csv?model=mix
+    let s = r#"lat;lon;validdate;t_2m:C;precip_1h:mm
+    52.4;13.4;1989-11-09T18:00:00Z;6.8;0.00
+    52.4;13.45;1989-11-09T18:00:00Z;6.9;0.00
+    52.4;13.5;1989-11-09T18:00:00Z;6.9;0.00
+    52.45;13.4;1989-11-09T18:00:00Z;6.8;0.00
+    52.45;13.45;1989-11-09T18:00:00Z;6.8;0.00
+    52.45;13.5;1989-11-09T18:00:00Z;6.9;0.00
+    52.5;13.4;1989-11-09T18:00:00Z;6.8;0.05
+    52.5;13.45;1989-11-09T18:00:00Z;6.9;0.00
+    52.5;13.5;1989-11-09T18:00:00Z;6.9;0.00
+    "#;
+    let file = Cursor::new(s);
+    let df_s = CsvReader::new(file)
+        .infer_schema(Some(100))
+        .has_header(true)
+        .with_delimiter(b';')
+        .with_ignore_parser_errors(true)
+        .finish()
+        .unwrap();
+
+    // Query using rust connector
+    // Credentials
+    dotenv().ok();
+    let api_key: String = env::var("METEOMATICS_PW").unwrap();
+    let api_user: String = env::var("METEOMATICS_USER").unwrap();
+    
+    // Create API connector
+    let meteomatics_connector = APIClient::new(
+        api_user,
+        api_key,
+        10,
+    );
+
+    // Create time information
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+
+    // Create Parameters
+    let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
+
+    // Create Location
+    let bbox: BBox = BBox {
+        lat_min: 52.40,
+        lat_max: 52.50,
+        lon_min: 13.40,
+        lon_max: 13.50,
+        lat_res: 0.05,
+        lon_res: 0.05
+    };
+
+    // Call endpoint
+    let df_q = meteomatics_connector
+        .query_grid_unpivoted(&start_date, &parameters, &bbox, &None)
+        .await
+        .unwrap();
+    println!("Rust result: {:?}", df_q);
+    println!("Python result: {:?}", df_s);
+    assert!(df_s.frame_equal(&df_q));
+}
+
+#[tokio::test]
+async fn query_grid_unpivoted_time_series() {
+    // directly downloaded from the API
+    // https://api.meteomatics.com/1989-11-09T18:00:00.000Z--1989-11-10T18:00:00.000Z:PT12H/t_2m:C,precip_1h:mm/52.50,13.40_52.40,13.50:0.05,0.05/csv?model=mix
+    let s = r#"lat;lon;validdate;t_2m:C;precip_1h:mm
+    52.4;13.4;1989-11-09T18:00:00Z;6.8;0.00
+    52.4;13.4;1989-11-10T06:00:00Z;1.5;0.00
+    52.4;13.4;1989-11-10T18:00:00Z;5.4;0.00
+    52.4;13.45;1989-11-09T18:00:00Z;6.9;0.00
+    52.4;13.45;1989-11-10T06:00:00Z;1.5;0.00
+    52.4;13.45;1989-11-10T18:00:00Z;5.3;0.00
+    52.4;13.5;1989-11-09T18:00:00Z;6.9;0.00
+    52.4;13.5;1989-11-10T06:00:00Z;1.5;0.00
+    52.4;13.5;1989-11-10T18:00:00Z;5.3;0.00
+    52.45;13.4;1989-11-09T18:00:00Z;6.8;0.00
+    52.45;13.4;1989-11-10T06:00:00Z;1.4;0.00
+    52.45;13.4;1989-11-10T18:00:00Z;5.4;0.00
+    52.45;13.45;1989-11-09T18:00:00Z;6.8;0.00
+    52.45;13.45;1989-11-10T06:00:00Z;1.4;0.00
+    52.45;13.45;1989-11-10T18:00:00Z;5.3;0.00
+    52.45;13.5;1989-11-09T18:00:00Z;6.9;0.00
+    52.45;13.5;1989-11-10T06:00:00Z;1.5;0.00
+    52.45;13.5;1989-11-10T18:00:00Z;5.3;0.00
+    52.5;13.4;1989-11-09T18:00:00Z;6.8;0.05
+    52.5;13.4;1989-11-10T06:00:00Z;1.4;0.00
+    52.5;13.4;1989-11-10T18:00:00Z;5.4;0.00
+    52.5;13.45;1989-11-09T18:00:00Z;6.9;0.00
+    52.5;13.45;1989-11-10T06:00:00Z;1.4;0.00
+    52.5;13.45;1989-11-10T18:00:00Z;5.3;0.00
+    52.5;13.5;1989-11-09T18:00:00Z;6.9;0.00
+    52.5;13.5;1989-11-10T06:00:00Z;1.4;0.00
+    52.5;13.5;1989-11-10T18:00:00Z;5.3;0.00
+    "#;
+    let file = Cursor::new(s);
+    let df_s = CsvReader::new(file)
+        .infer_schema(Some(100))
+        .has_header(true)
+        .with_delimiter(b';')
+        .with_ignore_parser_errors(true)
+        .finish()
+        .unwrap();
+
+    // Query using rust connector
+    // Credentials
+    dotenv().ok();
+    let api_key: String = env::var("METEOMATICS_PW").unwrap();
+    let api_user: String = env::var("METEOMATICS_USER").unwrap();
+    
+    // Create API connector
+    let meteomatics_connector = APIClient::new(
+        api_user,
+        api_key,
+        10,
+    );
+
+    // Create time information
+    // 1989-11-09 19:00:00 --> 18:00:00 UTC
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let end_date = start_date + Duration::days(1);
+    let interval = Duration::hours(12);
+
+    // Create Parameters
+    let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
+
+    // Create Location
+    let bbox: BBox = BBox {
+        lat_min: 52.40,
+        lat_max: 52.50,
+        lon_min: 13.40,
+        lon_max: 13.50,
+        lat_res: 0.05,
+        lon_res: 0.05
+    };
+
+    // Call endpoint
+    let df_q = meteomatics_connector
+        .query_grid_unpivoted_time_series(
+            &start_date, &end_date, &interval, &parameters, &bbox, &None
+        )
         .await
         .unwrap();
     println!("Rust result: {:?}", df_q);
