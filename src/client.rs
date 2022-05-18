@@ -30,10 +30,10 @@ impl APIClient {
         }
     }
 
-    /// Use this to get a DataFrame from the API for a series of coordinates 
-    /// (e.g. 47.423336, 9.377225) or postal codes (e.g. postal_CH9000).
-    /// Users can specify optional parameters. These parameters are then inserted
-    /// at the end of the URL (e.g.  /html?**model=mix**)
+    /// Use this to get a ```polars``` DataFrame from the API for a series of coordinates (e.g. 47.423336, 9.377225)
+    /// or postal codes (e.g. postal_CH9000). Users can specify optional parameters. These parameters 
+    /// are then inserted at the end of the URL (e.g.  /html?**model=mix**). Please note that this uses
+    /// the CSV endpoint of the API for downloading the requested data source.
     pub async fn query_time_series(
         &self,
         start_date: &chrono::DateTime<chrono::Utc>,
@@ -73,13 +73,11 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(connector_error) => Err(ConnectorError::ApiError {
-                source: connector_error,
-            }),
+            Err(_) => Err(ConnectorError::ReqwestError),
         }
     }
     
-    /// This function handles the actual http request using the reqwest crate. 
+    /// Handles the actual HTTP request using the ```reqwest``` crate. 
     async fn do_http_get(&self, full_url: Url) -> Result<Response, reqwest::Error> {
         self.http_client
             .get(full_url)
@@ -89,6 +87,8 @@ impl APIClient {
     }
 }
 
+/// Convert the HTTP response body text (i.e. the downloaded CSV) into a ```polars``` DataFrame. 
+/// Consumes the HTTP response.
 async fn parse_response_to_dataframe(
     response: Response,
 ) -> Result<polars::frame::DataFrame, polars::error::PolarsError> {
@@ -108,6 +108,8 @@ async fn parse_response_to_dataframe(
     df 
 }
 
+/// Build the part of the query that contains information about the request time, location, parameters
+/// and optional specifications. This is then combined with the base API URL.
 async fn build_query_specs(
     start_date: &chrono::DateTime<chrono::Utc>,
     end_date: &chrono::DateTime<chrono::Utc>,
@@ -141,13 +143,15 @@ async fn build_query_specs(
     return query_specs
 }
 
+/// Combines the default base API URL with the query specific information.
 async fn build_url(url_fragment: &str) -> Result<Url, ParseError> {
     let base_url = Url::parse(DEFAULT_API_BASE_URL).expect("Base URL is known to be valid");
     let full_url = base_url.join(url_fragment)?;
     Ok(full_url)
 }
 
-
+/// Convert a number of Points to a String according to the Meteomatics API specifications.
+// TODO: Maybe put this in the location module?
 async fn points_to_str(coords: &Vec<Point>) -> String {
     coords.iter().map(|p| format!("{}", p)).collect::<Vec<String>>().join("+")
 }
