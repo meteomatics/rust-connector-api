@@ -1,7 +1,12 @@
+//! # Client 
+//! The ```APIClient``` provides access to different query types.
 use crate::errors::ConnectorError;
 use reqwest::{Client, Response, StatusCode};
 use url::{ParseError, Url};
 use crate::location::{Point, BBox};
+use std::path::Path;
+use std::fs;
+use std::fs::File;
 
 const DEFAULT_API_BASE_URL: &str = "https://api.meteomatics.com";
 
@@ -51,7 +56,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
-            &start_date, &end_date, &interval, &parameters, &coords_str, &optionals
+            start_date, end_date, interval, parameters, &coords_str, optionals, &String::from("csv")
         ).await;
 
         // Create the complete URL
@@ -106,7 +111,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
-            &start_date, &end_date, &interval, &parameters, &coords_str, &optionals
+            start_date, end_date, interval, parameters, &coords_str, optionals, &String::from("csv")
         ).await;
 
         // Create the complete URL
@@ -153,7 +158,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_grid_query_specs(
-            &start_date, parameter, &coords_str, &optionals
+            start_date, parameter, &coords_str, optionals, &String::from("csv")
         ).await;
 
         // Create the complete URL
@@ -196,7 +201,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_grid_query_specs(
-            &start_date, &params, &coords_str, &optionals
+            start_date, &params, &coords_str, optionals, &String::from("csv")
         ).await;
 
         // Create the complete URL
@@ -238,7 +243,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
-            &start_date, &end_date, &interval, &parameters, &coords_str, &optionals
+            start_date, end_date, interval, parameters, &coords_str, optionals, &String::from("csv")
         ).await;
 
         // Create the complete URL
@@ -265,15 +270,87 @@ impl APIClient {
         }
     }
 
+     /// Download a ```NetCDF``` from the API for a grid of locations bounded by a 
+    /// bounding box object ```BBox``` and an arbitray number of parameters and a time series.  
+    pub async fn query_netcdf(&self,
+        start_date: &chrono::DateTime<chrono::Utc>,
+        end_date: &chrono::DateTime<chrono::Utc>,
+        interval: &chrono::Duration,
+        parameter: &String,
+        bbox: &BBox,
+        file_name: &String,
+        optionals: &Option<Vec<String>>
+    ) -> Result<(), ConnectorError> {
+
+        create_path(file_name).await?;
+
+        // Create the bounding box string according to API specification.
+        let coords_str = format!("{}", bbox);
+
+        // Create the query specifications (time, location, etc.)
+        let query_specs = build_netcdf_query_specs(
+            start_date, end_date, interval, parameter, &coords_str, optionals
+        ).await;
+
+        // Create the complete URL
+        let full_url = build_url(&query_specs).await.map_err(|_| ConnectorError::ParseError)?;
+
+        // Get the query result
+        let result = self.do_http_get(full_url).await;
+        
+        // Match the result
+        match result {
+            Ok(response) => match response.status() {
+                StatusCode::OK => {
+                    write_file(response, file_name).await?;
+                    Ok(())
+                }
+                status => Err(ConnectorError::HttpError(
+                    status.to_string(),
+                    response.text().await.unwrap(),
+                    status,
+                )),
+            },
+            Err(_) => Err(ConnectorError::ReqwestError),
+        }
+    }
     
     /// Handles the actual HTTP request using the ```reqwest``` crate. 
-    async fn do_http_get(&self, full_url: Url) -> Result<Response, reqwest::Error> {
+    async fn do_http_get(&self, full_url: Url) -> Result<Response, ConnectorError> {
         self.http_client
             .get(full_url)
             .basic_auth(&self.username, Some(String::from(&self.password)))
             .send()
             .await
+            .map_err(|_| ConnectorError::ReqwestError)
     }
+}
+
+/// Write to file
+async fn write_file(response: Response, file_name: &String) -> Result<(), ConnectorError> {
+    let body = response.bytes().await?;
+    let mut content = std::io::Cursor::new(body);
+
+    let mut file = File::create(file_name)?;
+    std::io::copy(&mut content, &mut file)?;
+    Ok(())
+}
+
+/// Creates a path if it does not already exist.
+async fn create_path(file_name: &String) -> Result<(), ConnectorError> {
+    // https://www.programming-idioms.org/idiom/212/check-if-folder-exists
+    let dir: &Path = Path::new(file_name).parent().unwrap();
+    let b: bool = dir.is_dir();
+
+    if !b {
+       match fs::create_dir_all(dir) {
+           Ok(_) => Ok(()),
+           Err(_) => Err(ConnectorError::FileIOError)
+       }
+    } else {
+        Ok(())
+    }
+
 }
 
 /// Creates a new DataFrame latitude and longitude to the DataFrame created from the HTTP response.
@@ -366,16 +443,18 @@ async fn build_ts_query_specs(
     interval: &chrono::Duration,
     parameters: &Vec<String>,
     coords_str: &str,
-    optionals: &Option<Vec<String>>
+    optionals: &Option<Vec<String>>,
+    format: &String,
 ) -> String {
 
     let query_specs = format!(
-        "{}--{}:{}/{}/{}/csv",
+        "{}--{}:{}/{}/{}/{}",
         start_date.to_rfc3339(),
         end_date.to_rfc3339(),
         interval.to_string(),
         parameters.join(","),
         coords_str,
+        format
     );
 
     // Handles optional parameters 
@@ -400,12 +479,46 @@ async fn build_grid_query_specs(
     start_date: &chrono::DateTime<chrono::Utc>,
     parameter: &String,
     coords_str: &str,
-    optionals: &Option<Vec<String>>
+    optionals: &Option<Vec<String>>,
+    format: &String,
 ) -> String {
     let query_specs = format!(
-        "{}/{}/{}/csv",
+        "{}/{}/{}/{}",
         start_date.to_rfc3339(),
         parameter.to_string(),
+        coords_str,
+        format
+    );
+
+    // Handles optional parameters 
+    let query_specs = match optionals {
+        None => query_specs,
+        Some(_) => {
+            format!(
+                "{}?{}",
+                query_specs,
+                optionals.as_ref().unwrap().join("&")
+            )
+        }
+    };
+    
+    return query_specs
+}
+
+async fn build_netcdf_query_specs(
+    start_date: &chrono::DateTime<chrono::Utc>,
+    end_date: &chrono::DateTime<chrono::Utc>,
+    interval: &chrono::Duration,
+    parameter: &String,
+    coords_str: &str,
+    optionals: &Option<Vec<String>>,
+) -> String {
+    let query_specs = format!(
+        "{}--{}:{}/{}/{}/netcdf",
+        start_date.to_rfc3339(),
+        end_date.to_rfc3339(),
+        interval.to_string(),
+        parameter,
         coords_str,
     );
 
@@ -447,6 +560,19 @@ mod tests {
     use chrono::prelude::*;
     use chrono::Duration;
     use crate::location::{Point, BBox};
+    use std::path::Path;
+    use std::fs;
+
+
+    #[tokio::test]
+    async fn check_path_creation_nonexistent() {
+        let file_name: String = String::from("tests/netcdfs/my_netcdf.nc");
+        crate::client::create_path(&file_name).await.unwrap();
+        let dir: &Path = Path::new(&file_name).parent().unwrap();
+        let check: bool = dir.is_dir();
+        assert_eq!(check, true);
+        fs::remove_dir_all(dir).unwrap();
+    }
 
     #[tokio::test]
     // checks if the location specifier is correctly created
@@ -472,7 +598,7 @@ mod tests {
         let coord_str = crate::client::points_to_str(&coords).await;
 
         let query_s = crate::client::build_ts_query_specs(
-            &start_date, &end_date, &interval, &parameters, &coord_str, &None
+            &start_date, &end_date, &interval, &parameters, &coord_str, &None, &String::from("csv")
         ).await;
         assert_eq!(
             "2022-05-17T12:00:00+00:00--2022-05-18T12:00:00+00:00:PT3600S/t_2m:C/52.520551,13.461804/csv", 
@@ -485,7 +611,7 @@ mod tests {
         let interval = Duration::hours(1);
 
         let query_ms = crate::client::build_ts_query_specs(
-            &start_date, &end_date, &interval, &parameters, &coord_str, &None
+            &start_date, &end_date, &interval, &parameters, &coord_str, &None, &String::from("csv")
         ).await;
         assert_eq!(
             "2022-05-17T12:00:00.453829+00:00--2022-05-18T12:00:00.453829+00:00:PT3600S/t_2m:C/52.520551,13.461804/csv", 
@@ -498,7 +624,7 @@ mod tests {
         let interval = Duration::hours(1);
 
         let query_ns = crate::client::build_ts_query_specs(
-            &start_date, &end_date, &interval, &parameters, &coord_str, &None
+            &start_date, &end_date, &interval, &parameters, &coord_str, &None, &String::from("csv")
         ).await;
         assert_eq!(
             "2022-05-17T12:00:00.453829123+00:00--2022-05-18T12:00:00.453829123+00:00:PT3600S/t_2m:C/52.520551,13.461804/csv", 
