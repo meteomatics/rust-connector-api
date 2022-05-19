@@ -5,6 +5,8 @@ use std::env;
 use rust_connector_api::location::{Point, BBox};
 use polars::prelude::*;
 use std::io::Cursor;
+use std::fs;
+use std::path::Path;
 
 // Unit testing section
 // TODO: Add option to query for a grid
@@ -577,4 +579,53 @@ async fn query_grid_unpivoted_time_series() {
     println!("Rust result: {:?}", df_q);
     println!("Python result: {:?}", df_s);
     assert!(df_s.frame_equal(&df_q));
+}
+
+#[tokio::test]
+async fn query_netcdf() {
+    // Query using rust connector
+    // Credentials
+    dotenv().ok();
+    let api_key: String = env::var("METEOMATICS_PW").unwrap();
+    let api_user: String = env::var("METEOMATICS_USER").unwrap();
+    
+    // Create API connector
+    let meteomatics_connector = APIClient::new(
+        api_user,
+        api_key,
+        10,
+    );
+
+    // Create time information
+    // 1989-11-09 19:00:00 --> 18:00:00 UTC
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let end_date = start_date + Duration::days(1);
+    let interval = Duration::hours(12);
+
+    // Create Parameters
+    let parameter =String::from("t_2m:C");
+
+    // Create Location
+    let bbox: BBox = BBox {
+        lat_min: 52.40,
+        lat_max: 52.50,
+        lon_min: 13.40,
+        lon_max: 13.50,
+        lat_res: 0.05,
+        lon_res: 0.05
+    };
+
+    // Create file name
+    let file_name: String = String::from("tests/netcdf/my_netcdf.nc");
+
+    // Call endpoint
+    meteomatics_connector
+        .query_netcdf(
+            &start_date, &end_date, &interval, &parameter, &bbox, &file_name, &None
+        )
+        .await
+        .unwrap();
+    let dir: &Path = Path::new(&file_name).parent().unwrap();
+    fs::remove_file(&file_name).unwrap();
+    fs::remove_dir_all(&dir).unwrap();
 }
