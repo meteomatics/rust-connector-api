@@ -7,6 +7,7 @@ use polars::prelude::*;
 use std::io::Cursor;
 use std::fs;
 use std::path::Path;
+use netcdf::*;
 
 // Unit testing section
 // TODO: Add option to query for a grid
@@ -625,6 +626,22 @@ async fn query_netcdf() {
         )
         .await
         .unwrap();
+
+    // Make some tests
+    let file = netcdf::open(&file_name).unwrap();
+    let var = &file.variable("t_2m").expect("Could not find variable 't_2m");
+
+    // Check value: ds_rust["t_2m"].data[0,0,0]
+    let xr_test: f64 = 6.81058931350708;
+    let temp_f64: f64 = var.value(Some(&[0,0,0])).unwrap();
+    assert_eq!(xr_test, temp_f64);
+
+    // Check another value: ds_rust["t_2m"].data[2,2,2]
+    let xr_test: f64 = 5.269172668457031;
+    let temp_f64: f64 = var.value(Some(&[2,2,2])).unwrap();
+    assert_eq!(xr_test, temp_f64);
+
+    // Remove the file    
     let dir: &Path = Path::new(&file_name).parent().unwrap();
     fs::remove_file(&file_name).unwrap();
     fs::remove_dir_all(&dir).unwrap();

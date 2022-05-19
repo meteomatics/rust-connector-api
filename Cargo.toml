@@ -16,7 +16,9 @@ strum_macros = "0.21"
 chrono = "0.4"
 thiserror = "1.0"
 polars = "0.21.1"
-dotenv = "0.15.0"
+
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
+netcdf = "0.7.0"
+dotenv = "0.15.0"
