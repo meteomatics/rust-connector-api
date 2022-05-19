@@ -7,7 +7,6 @@ use polars::prelude::*;
 use std::io::Cursor;
 use std::fs;
 use std::path::Path;
-use netcdf::*;
 
 // Unit testing section
 // TODO: Add option to query for a grid
