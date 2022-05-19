@@ -25,6 +25,10 @@ pub enum ConnectorError {
     /// Parse error.
     #[error("Parsing error")]
     ParseError,
+
+    /// File i/o error
+    #[error("File i/o error")]
+    FileIOError
 }
 
 
@@ -43,5 +47,11 @@ impl From<url::ParseError> for ConnectorError {
 impl From<reqwest::Error> for ConnectorError {
     fn from(_: reqwest::Error) -> Self {
         ConnectorError::ReqwestError
+    }
+}
+
+impl From<std::io::Error> for ConnectorError {
+    fn from(_: std::io::Error) -> Self {
+        ConnectorError::FileIOError
     }
 }
