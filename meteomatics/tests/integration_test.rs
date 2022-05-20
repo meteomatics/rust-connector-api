@@ -645,3 +645,23 @@ async fn query_netcdf() {
     fs::remove_file(&file_name).unwrap();
     fs::remove_dir_all(&dir).unwrap();
 }
+
+#[tokio::test]
+async fn query_user_features(){
+    // Query using rust connector
+    // Credentials
+    dotenv().ok();
+    let api_key: String = env::var("METEOMATICS_PW").unwrap();
+    let api_user: String = env::var("METEOMATICS_USER").unwrap();
+    
+    // Create API connector
+    let meteomatics_connector = APIClient::new(
+        api_user,
+        api_key,
+        10,
+    );
+
+    let ustats = meteomatics_connector.query_user_features().await.unwrap();
+    assert_eq!(env::var("METEOMATICS_USER").unwrap(), ustats.stats.username);
+    assert_eq!(true, ustats.stats.area);
+}
