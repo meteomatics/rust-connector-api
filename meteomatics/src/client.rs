@@ -287,7 +287,7 @@ impl APIClient {
         }
     }
 
-     /// Download a ```NetCDF``` from the API for a grid of locations bounded by a 
+    /// Download a ```NetCDF``` from the API for a grid of locations bounded by a 
     /// bounding box object ```BBox``` and an arbitray number of parameters and a time series.  
     pub async fn query_netcdf(&self,
         start_date: &chrono::DateTime<chrono::Utc>,
@@ -307,6 +307,49 @@ impl APIClient {
         // Create the query specifications (time, location, etc.)
         let query_specs = build_netcdf_query_specs(
             start_date, end_date, interval, parameter, &coords_str, optionals
+        ).await;
+
+        // Create the complete URL
+        let full_url = build_url(&query_specs).await.map_err(|_| ConnectorError::ParseError)?;
+
+        // Get the query result
+        let result = self.do_http_get(full_url).await;
+        
+        // Match the result
+        match result {
+            Ok(response) => match response.status() {
+                StatusCode::OK => {
+                    write_file(response, file_name).await?;
+                    Ok(())
+                }
+                status => Err(ConnectorError::HttpError(
+                    status.to_string(),
+                    response.text().await.unwrap(),
+                    status,
+                )),
+            },
+            Err(_) => Err(ConnectorError::ReqwestError),
+        }
+    }
+
+    /// Download a ```PNG``` from the API for a grid of locations bounded by a 
+    /// bounding box object ```BBox``` and an arbitray number of parameters and a time series.  
+    pub async fn query_grid_png(&self,
+        date: &chrono::DateTime<chrono::Utc>,
+        parameter: &String,
+        bbox: &BBox,
+        file_name: &String,
+        optionals: &Option<Vec<String>>
+    ) -> Result<(), ConnectorError> {
+
+        create_path(file_name).await?;
+
+        // Create the bounding box string according to API specification.
+        let coords_str = format!("{}", bbox);
+
+        // Create the query specifications (time, location, etc.)
+        let query_specs = build_grid_query_specs(
+            date, parameter, &coords_str, optionals, &String::from("png")
         ).await;
 
         // Create the complete URL
