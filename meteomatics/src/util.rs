@@ -116,19 +116,15 @@ std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
 }
 
 /// Creates a new DataFrame with added postal_Code extracted from the provided postal code.
-pub async fn df_add_postal(df_in: polars::frame::DataFrame, postal: &String) -> 
+pub async fn df_add_postal(df_in: polars::frame::DataFrame, postal: &str) -> 
 std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
-    use polars::prelude::*;
     // https://docs.rs/polars/latest/polars/frame/struct.DataFrame.html#method.shape
     // Get (height, width) of the DataFrame. Get width:
     let n = df_in.height();
-    let mut col_zipcode: Vec<String> = Vec::new();
-    for _ in 0..n {
-        col_zipcode.push(postal.clone());
-    }
+    let col_zipcode = vec![postal; n];
     // https://docs.rs/polars/latest/polars/frame/struct.DataFrame.html#method.extend
     // https://docs.rs/polars/latest/polars/frame/struct.DataFrame.html#method.get_column_names
-    let df_tmp = df!("station_id" => &col_zipcode)?;
+    let df_tmp = df!("station_id" => col_zipcode)?;
     let df_out: DataFrame = df_tmp.hstack(df_in.get_columns())?;
     Ok(df_out)
 }
@@ -183,7 +179,7 @@ pub async fn build_ts_query_specs(
     start_date: &chrono::DateTime<chrono::Utc>,
     end_date: &chrono::DateTime<chrono::Utc>,
     interval: &chrono::Duration,
-    parameters: &Vec<String>,
+    parameters: &[String],
     coords_str: &str,
     optionals: &Option<Vec<String>>,
     format: &String,
@@ -193,7 +189,7 @@ pub async fn build_ts_query_specs(
         "{}--{}:{}/{}/{}/{}",
         start_date.to_rfc3339(),
         end_date.to_rfc3339(),
-        interval.to_string(),
+        interval,
         parameters.join(","),
         coords_str,
         format
@@ -211,7 +207,7 @@ pub async fn build_ts_query_specs(
         }
     };
     
-    return query_specs
+    query_specs
 }
 
 /// Build the part of the query (in case of grid data requests) that contains information about 
@@ -227,7 +223,7 @@ pub async fn build_grid_query_specs(
     let query_specs = format!(
         "{}/{}/{}/{}",
         start_date.to_rfc3339(),
-        parameter.to_string(),
+        parameter,
         coords_str,
         format
     );
@@ -244,7 +240,7 @@ pub async fn build_grid_query_specs(
         }
     };
     
-    return query_specs
+    query_specs
 }
 
 pub async fn build_grid_ts_query_specs(
@@ -260,7 +256,7 @@ pub async fn build_grid_ts_query_specs(
         "{}--{}:{}/{}/{}/{}",
         start_date.to_rfc3339(),
         end_date.to_rfc3339(),
-        interval.to_string(),
+        interval,
         parameter,
         coords_str,
         format,
@@ -278,7 +274,7 @@ pub async fn build_grid_ts_query_specs(
         }
     };
     
-    return query_specs
+    query_specs
 }
 
 
@@ -290,7 +286,7 @@ pub async fn build_url(url_fragment: &str) -> std::result::Result<Url, ParseErro
 }
 
 /// Convert a number of Points to a String according to the Meteomatics API specifications.
-pub async fn points_to_str(coords: &Vec<Point>) -> String {
+pub async fn points_to_str(coords: &[Point]) -> String {
     coords.iter().map(|p| format!("{}", p)).collect::<Vec<String>>().join("+")
 }
 

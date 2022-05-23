@@ -58,18 +58,18 @@ impl APIClient {
         start_date: &chrono::DateTime<chrono::Utc>,
         end_date: &chrono::DateTime<chrono::Utc>,
         interval: &chrono::Duration,
-        parameters: &Vec<String>,
-        coordinates: &Vec<Point>,
+        parameters: &[String],
+        coordinates: &[Point],
         optionals: &Option<Vec<String>>,
     ) -> Result<polars::frame::DataFrame, ConnectorError> {
         // Check if there is only a single Point in the coordinates. This is important because in this
         // case the HTTP CSV response does not contain the information about the location (-.-). To 
         // produce a consistent DataFrame we need to create a lat and lon column (as does the python
         // connector).
-        let needs_latlon: bool = if coordinates.len() == 1 { true } else { false };
+        let needs_latlon: bool = coordinates.len() == 1;
 
         // Create the coordinates
-        let coords_str = points_to_str(&coordinates).await;
+        let coords_str = points_to_str(coordinates).await;
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
@@ -113,15 +113,15 @@ impl APIClient {
         start_date: &chrono::DateTime<chrono::Utc>,
         end_date: &chrono::DateTime<chrono::Utc>,
         interval: &chrono::Duration,
-        parameters: &Vec<String>,
-        postals: &Vec<String>,
+        parameters: &[String],
+        postals: &[String],
         optionals: &Option<Vec<String>>,
     ) -> Result<polars::frame::DataFrame, ConnectorError> {
         // Check if there is only a single zipcode in the postals. This is important because in this
         // case the HTTP CSV response does not contain the information about the location (-.-). To 
         // produce a consistent DataFrame we need to create a postal_code column (as does the python
         // connector).
-        let needs_latlon: bool = if postals.len() == 1 { true } else { false };
+        let needs_latlon: bool = postals.len() == 1;
 
         // Create the coordinates
         let coords_str = postals.join("+");
@@ -206,7 +206,7 @@ impl APIClient {
     /// bounding box object ```BBox``` and an arbitray number of parameters and a unique point in time. 
     pub async fn query_grid_unpivoted(&self,
         start_date: &chrono::DateTime<chrono::Utc>,
-        parameters: &Vec<String>,
+        parameters: &[String],
         bbox: &BBox,
         optionals: &Option<Vec<String>>,
     ) -> Result<polars::frame::DataFrame, ConnectorError> {
@@ -251,7 +251,7 @@ impl APIClient {
         start_date: &chrono::DateTime<chrono::Utc>,
         end_date: &chrono::DateTime<chrono::Utc>,
         interval: &chrono::Duration,
-        parameters: &Vec<String>,
+        parameters: &[String],
         bbox: &BBox,
         optionals: &Option<Vec<String>>
     ) -> Result<polars::frame::DataFrame, ConnectorError> {
