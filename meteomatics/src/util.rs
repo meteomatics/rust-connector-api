@@ -1,5 +1,9 @@
 //! # Util
-//! This module bundles different utilities for the client.
+//! This module bundles different utilities for the client. It should not be necessary to access these
+//! tools outside the client. They are mainly grouped into utilities for de- and serialization of JSON
+//! HTTP responses, the creation of ```polars::frame::DataFrame``` objects from CSV HTTP responses and
+//! some modifications of the created DataFrames. Lastly there are some utilities for the creation of
+//! PNG and NetCDF files based on the HTTP response.
 
 // Crates
 use serde::{Deserialize, Serialize};
@@ -26,7 +30,7 @@ pub struct UStatsResponse{
     pub stats: UserStats,
 }
 
-/// This contains the actual information about your account statistics.
+/// This contains the actual information about the account statistics, quota and permissions.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UserStats{
     pub username: String,
@@ -52,8 +56,8 @@ pub struct UserStats{
     pub contact: Vec<String>,
 }
 
-/// The Limit struct is used to de-serialize the limit attributes of your account (e.g. how many 
-/// requests you can make in parallel or in total per day, etc.)
+/// The Limit struct is used to de-serialize the limit attributes of the account (e.g. how many 
+/// requests in parallel are allowed etc.)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Limit{
     pub used: u32,
@@ -63,12 +67,13 @@ pub struct Limit{
     pub hard_lim: u32
 }
 
+// Deserializes the response for the user_stats_json query.
 pub async fn extract_user_statistics(response: Response) -> std::result::Result<UStatsResponse, ConnectorError> {
     let json: UStatsResponse = response.json::<UStatsResponse>().await?;
     Ok(json)
 }
 
-/// Write to file
+/// Writes the HTTP response to a file. 
 pub async fn write_file(response: Response, file_name: &String) -> std::result::Result<(), ConnectorError> {
     let body = response.bytes().await?;
     let mut content = std::io::Cursor::new(body);
@@ -102,6 +107,7 @@ std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
     // https://docs.rs/polars/latest/polars/frame/struct.DataFrame.html#method.shape
     // Get (height, width) of the DataFrame. Get width:
     let n = df_in.height();
+    // TODO: Convert to simplified version see postal code
     let mut lat: Vec<f64> = Vec::new();
     let mut lon: Vec<f64> = Vec::new();
     for _ in 0..n {
@@ -138,6 +144,7 @@ pub async fn parse_response_to_df(
     let body = response.text().await.unwrap();
 
     // Parse the response to a DataFrame
+    // TODO: rename variable
     let file = std::io::Cursor::new(&body);
     use polars::prelude::*; 
     let df1 = polars::io::csv::CsvReader::new(file)
@@ -151,6 +158,7 @@ pub async fn parse_response_to_df(
     Ok(df1)
 }
 
+// Converts the HTTP response into a polars DataFrame.
 pub async fn parse_grid_response_to_df(
     response: Response,
 ) -> std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
@@ -158,6 +166,7 @@ pub async fn parse_grid_response_to_df(
         let body = response.text().await.unwrap();
 
         // Parse the response to a DataFrame
+        // TODO: Rename variable
         let file = std::io::Cursor::new(&body);
         use polars::prelude::*; 
         let df1 = polars::io::csv::CsvReader::new(file)
@@ -172,9 +181,10 @@ pub async fn parse_grid_response_to_df(
         Ok(df1)
 }
 
-/// Build the part of the query (in case of time series requests) that contains information about 
-/// the request time, location, parameters and optional specifications. This is then combined with 
-/// the base API URL.
+/// Builds the query specifications ('specs') for a time series query according to the Meteomatics API
+/// format rules. Optionally parses a number of provided extra specifiers (e.g. 'model=mix'). The
+/// dates are formatted according to ISO8601 (<https://en.wikipedia.org/wiki/ISO_8601>). The format
+/// parameter specifies the requested file type (e.g. "csv" or "netcdf" or "png").
 pub async fn build_ts_query_specs(
     start_date: &chrono::DateTime<chrono::Utc>,
     end_date: &chrono::DateTime<chrono::Utc>,
@@ -210,9 +220,10 @@ pub async fn build_ts_query_specs(
     query_specs
 }
 
-/// Build the part of the query (in case of grid data requests) that contains information about 
-/// the request time, location, parameters and optional specifications. This is then combined with 
-/// the base API URL.
+/// Builds the query specifications ('specs') for a grid query according to the Meteomatics API
+/// format rules. Optionally parses a number of provided extra specifiers (e.g. 'model=mix'). The
+/// date is formatted according to ISO8601 (<https://en.wikipedia.org/wiki/ISO_8601>). The format
+/// parameter specifies the requested file type (e.g. "csv" or "netcdf" or "png").
 pub async fn build_grid_query_specs(
     start_date: &chrono::DateTime<chrono::Utc>,
     parameter: &String,
@@ -243,6 +254,10 @@ pub async fn build_grid_query_specs(
     query_specs
 }
 
+/// Builds the query specifications ('specs') for a time series grid query according to the Meteomatics 
+/// API format rules. Optionally parses a number of provided extra specifiers (e.g. 'model=mix'). The
+/// dates are formatted according to ISO8601 (<https://en.wikipedia.org/wiki/ISO_8601>). The format
+/// parameter specifies the requested file type (e.g. "csv" or "netcdf" or "png").
 pub async fn build_grid_ts_query_specs(
     start_date: &chrono::DateTime<chrono::Utc>,
     end_date: &chrono::DateTime<chrono::Utc>,

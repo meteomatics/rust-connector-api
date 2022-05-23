@@ -9,7 +9,21 @@
 //! Users familiar with the Pandas ecosystem for Python will be up and running with Polars DataFrames
 //! in no time. 
 //!
-//! ```ignore
+//! ```rust,no_run
+//! // Namespace
+//! use rust_connector_api::APIClient;
+//! use chrono::{Duration, Utc, prelude::*};
+//! 
+//! // Credentials
+//! let api_key: String = String::from("my_password").unwrap();
+//! let api_user: String = String::from("my_username").unwrap();
+//! 
+//! // Create API connector
+//! let meteomatics_connector = APIClient::new(
+//!     api_user,
+//!     api_key,
+//!     10, // < HTTP request timeout
+//! );
 //! // Define a time series
 //! let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
 //! let end_date = start_date + Duration::days(1);
@@ -18,14 +32,16 @@
 //! // Specify a parameter
 //! let param = vec![String::from("t_2m:C")]
 //!
-//!    // Specify a location
-//!    let coords: Vec<Point> = vec![Point { lat: 52.52, lon: 13.405 }];
+//! // Specify a location
+//! let coords: Vec<Point> = vec![Point { lat: 52.52, lon: 13.405 }];
 //!
 //! // Call endpoint
 //! let df = meteomatics_connector
 //!     .query_time_series(&start_date, &end_date, &interval, &parameters, &coords, &None)
 //!     .await
 //!     .unwrap();
+//! 
+//! println!("{:?}", df);
 //! ```
 //! ```text
 //! ┌───────┬────────┬──────────────────────┬────────┐
