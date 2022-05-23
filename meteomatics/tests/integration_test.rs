@@ -647,6 +647,7 @@ async fn query_netcdf() {
 }
 
 #[tokio::test]
+// TODO: Add more tests for actual data content.
 async fn query_png() {
     // Query using rust connector
     // Credentials
@@ -696,6 +697,67 @@ async fn query_png() {
     assert_eq!(454, reader.info().width);
     assert_eq!(200, reader.info().height);
     
+    // Remove the file    
+    let dir: &Path = Path::new(&file_name).parent().unwrap();
+    fs::remove_file(&file_name).unwrap();
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+#[tokio::test]
+async fn query_grid_png_timeseries() {
+    // Query using rust connector
+    // Credentials
+    dotenv().ok();
+    let api_key: String = env::var("METEOMATICS_PW").unwrap();
+    let api_user: String = env::var("METEOMATICS_USER").unwrap();
+    
+    // Create API connector
+    let meteomatics_connector = APIClient::new(
+        api_user,
+        api_key,
+        10,
+    );
+
+    // Create time information
+    // 1989-11-09 19:00:00 --> 18:00:00 UTC
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let end_date = start_date + Duration::days(1);
+    let interval = Duration::hours(12);
+
+    // Create Parameters
+    let parameter =String::from("t_2m:C");
+
+    // Create Location
+    let bbox: BBox = BBox {
+        lat_min: 45.8179716,
+        lat_max: 47.8084648,
+        lon_min: 5.9559113,
+        lon_max: 10.4922941,
+        lat_res: 0.01,
+        lon_res: 0.01
+    };
+
+    // Create file name
+    let prefixpath: String = String::from("tests/png_series/test_series");
+
+    // Call endpoint
+    meteomatics_connector
+        .query_grid_png_timeseries(
+            &start_date, &end_date, &interval, &parameter, &bbox, &prefixpath, &None
+        )
+        .await
+        .unwrap();
+    
+    // Open a single PNG
+    let fmt = "%Y%m%d_%H%M%S";
+    let file_name = format!("{}_{}.png", prefixpath, start_date.format(fmt));
+    let decoder = png::Decoder::new(fs::File::open(&file_name).unwrap());
+    let reader = decoder.read_info().unwrap();
+
+    // Inspect more details of the last read frame.
+    assert_eq!(454, reader.info().width);
+    assert_eq!(200, reader.info().height);
+        
     // Remove the file    
     let dir: &Path = Path::new(&file_name).parent().unwrap();
     fs::remove_file(&file_name).unwrap();
