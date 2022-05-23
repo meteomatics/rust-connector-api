@@ -86,3 +86,8 @@ Temporary Items
 
 # Visual Studio Launch Configuration
 .vscode/launch.json
+
+# Test outputs and other potentially large files
+*.png 
+*.csv 
+*.nc
