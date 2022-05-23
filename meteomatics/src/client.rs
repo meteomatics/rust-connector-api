@@ -288,7 +288,7 @@ impl APIClient {
     }
 
     /// Download a ```NetCDF``` from the API for a grid of locations bounded by a 
-    /// bounding box object ```BBox``` and an arbitray number of parameters and a time series.  
+    /// bounding box object ```BBox``` and a single parameters and a time series.  
     pub async fn query_netcdf(&self,
         start_date: &chrono::DateTime<chrono::Utc>,
         end_date: &chrono::DateTime<chrono::Utc>,
@@ -305,8 +305,8 @@ impl APIClient {
         let coords_str = format!("{}", bbox);
 
         // Create the query specifications (time, location, etc.)
-        let query_specs = build_netcdf_query_specs(
-            start_date, end_date, interval, parameter, &coords_str, optionals
+        let query_specs = build_grid_ts_query_specs(
+            start_date, end_date, interval, parameter, &coords_str, "netcdf", optionals
         ).await;
 
         // Create the complete URL
@@ -332,8 +332,8 @@ impl APIClient {
         }
     }
 
-    /// Download a ```PNG``` from the API for a grid of locations bounded by a 
-    /// bounding box object ```BBox``` and an arbitray number of parameters and a time series.  
+    /// Download a ```PNG``` from the API for a grid of locations bounded by a bounding box object 
+    /// ```BBox``` and an single parameter and a single point in time.
     pub async fn query_grid_png(&self,
         date: &chrono::DateTime<chrono::Utc>,
         parameter: &String,
@@ -373,6 +373,29 @@ impl APIClient {
             },
             Err(_) => Err(ConnectorError::ReqwestError),
         }
+    }
+
+    /// Download a series of ```PNG``` files from the API for a grid of locations bounded by a 
+    /// bounding box object ```BBox``` and a single parameter in the form of a time series.
+    pub async fn query_grid_png_timeseries(&self,
+        start_date: &chrono::DateTime<chrono::Utc>,
+        end_date: &chrono::DateTime<chrono::Utc>,
+        interval: &chrono::Duration,
+        parameter: &String,
+        bbox: &BBox,
+        prefixpath: &String,
+        optionals: &Option<Vec<String>>
+    ) -> Result<(), ConnectorError> {
+
+        // Iterate the time series
+        let mut dt_cur = start_date.clone();
+        let fmt = "%Y%m%d_%H%M%S";
+        while dt_cur <= end_date.clone() {
+            let cur_file_name = format!("{}_{}.png", prefixpath, dt_cur.format(fmt));
+            self.query_grid_png(&dt_cur, parameter, bbox, &cur_file_name, optionals).await?;
+            dt_cur = dt_cur + interval.clone();
+        };
+        Ok(())
     }
     
     /// Handles the actual HTTP request using the ```reqwest``` crate. 

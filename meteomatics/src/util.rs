@@ -247,21 +247,23 @@ pub async fn build_grid_query_specs(
     return query_specs
 }
 
-pub async fn build_netcdf_query_specs(
+pub async fn build_grid_ts_query_specs(
     start_date: &chrono::DateTime<chrono::Utc>,
     end_date: &chrono::DateTime<chrono::Utc>,
     interval: &chrono::Duration,
     parameter: &String,
     coords_str: &str,
+    format: &str,
     optionals: &Option<Vec<String>>,
 ) -> String {
     let query_specs = format!(
-        "{}--{}:{}/{}/{}/netcdf",
+        "{}--{}:{}/{}/{}/{}",
         start_date.to_rfc3339(),
         end_date.to_rfc3339(),
         interval.to_string(),
         parameter,
         coords_str,
+        format,
     );
 
     // Handles optional parameters 
