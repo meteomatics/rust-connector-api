@@ -292,6 +292,21 @@ pub async fn build_grid_ts_query_specs(
     query_specs
 }
 
+/// This query is used to get information about lightning in a defined area and over a certain amount
+/// of time (defined by ```start_date``` and ```end_date```).
+pub async fn build_grid_ts_lightning_query_specs(
+    start_date: &chrono::DateTime<chrono::Utc>,
+    end_date: &chrono::DateTime<chrono::Utc>,
+    coords_str: &str
+) -> String {
+    let query_specs = format!(
+        "get_lightning_list?time_range={}--{}&bounding_box={}&format=csv",
+        start_date.to_rfc3339(),
+        end_date.to_rfc3339(),
+        coords_str
+    );
+    query_specs 
+}
 
 /// Combines the default base API URL with the query specific information.
 pub async fn build_url(url_fragment: &str) -> std::result::Result<Url, ParseError> {

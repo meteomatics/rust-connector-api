@@ -31,6 +31,49 @@ impl APIClient {
         }
     }
 
+    /// Query lightning in a grid
+    pub async fn query_lightning(
+        &self,
+        start_date: &chrono::DateTime<chrono::Utc>,
+        end_date: &chrono::DateTime<chrono::Utc>,
+        bbox: &BBox
+    ) -> std::result::Result<polars::frame::DataFrame, ConnectorError> {
+        // Create the bounding box string according to API specification.
+        let coords_str = format!(
+            "{},{}_{},{}", 
+            bbox.lat_max.to_string(),
+            bbox.lon_min.to_string(),
+            bbox.lat_min.to_string(),
+            bbox.lon_max.to_string()
+        );
+
+        // Create the query for lightning
+        let query_specs = build_grid_ts_lightning_query_specs(start_date, end_date, &coords_str).await;
+
+        // Create the full URL
+        let full_url = build_url(&query_specs).await.map_err(|_| ConnectorError::ParseError)?;
+
+        // Get the query result
+        let result = self.do_http_get(full_url).await;
+
+        // Match the result
+        match result {
+            Ok(response) => match response.status() {
+                StatusCode::OK => {
+                    let df = parse_response_to_df(
+                        response).await?;
+                    Ok(df)
+                }
+                status => Err(ConnectorError::HttpError(
+                    status.to_string(),
+                    response.text().await.unwrap(),
+                    status,
+                )),
+            },
+            Err(_) => Err(ConnectorError::ReqwestError),
+        }
+    }
+
     /// Check your options.
     pub async fn query_user_features(&self) -> Result<UStatsResponse, ConnectorError>{
         let query_specs = String::from("user_stats_json");
