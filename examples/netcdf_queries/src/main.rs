@@ -6,8 +6,6 @@ use rust_connector_api::errors::ConnectorError;
 #[tokio::main]
 async fn main(){
     // Credentials  
-    let u_name: String = String::from("NA");
-    let u_pw: String = String::from("NA");
     // let u_name: String = String::from("python-community");
     // let u_pw: String = String::from("Umivipawe179");
 
