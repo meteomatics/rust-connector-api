@@ -10,3 +10,4 @@ rust-connector-api = { path = "../../meteomatics"}
 tokio = { version = "1", features = ["full"] }
 chrono = "0.4"
 polars = "0.21.1"
+dotenv = "0.15.0"

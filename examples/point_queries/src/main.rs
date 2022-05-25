@@ -1,14 +1,30 @@
-use chrono::{Utc, DateTime, Duration};
+//! # Point Query 
+//! This is a demonstration of how to download a DataFrame for one or many locations and one or many
+//! points in time (i.e. a time series). The locations are either defined as "postal_codes" or as
+//! ```Point``` objects. Point objects contain the latitude and longitude coordinates of a location.
+//! To run the example either change ```u_name``` and ```u_pw```
+//! directly *or* create a file called ```.env``` and put the following lines in there:
+//! ```text
+//! METEOMATICS_PW=your_password
+//! METEOMATICS_USER=your_username
+//! ```
+//! Make sure to include ```.env``` in your ```.gitignore```. This is a safer variant for developers 
+//! to work with API credentials as you will never accidentally commit/push your credentials.
+
+use chrono::{Utc, Duration};
 use rust_connector_api::APIClient;
 use rust_connector_api::location::Point;
 use rust_connector_api::errors::ConnectorError;
 use polars::prelude::*;
+use std::env;
+use dotenv::dotenv;
 
 #[tokio::main]
 async fn main(){
     // Credentials
-    let u_name: String = String::from("python-community");
-    let u_pw: String = String::from("Umivipawe179");
+    dotenv().ok();
+    let u_pw: String = env::var("METEOMATICS_PW").unwrap();
+    let u_name: String = env::var("METEOMATICS_USER").unwrap();
 
     // Create Client
     let api: APIClient = APIClient::new(u_name,u_pw,10);
@@ -30,23 +46,23 @@ async fn main(){
 /// Query a time series for a single point and two parameters.
 async fn example_request(api: &APIClient) -> std::result::Result<DataFrame, ConnectorError>{
     // Time series definition
-    let start_date: DateTime<Utc> = Utc::now();
-    let end_date: DateTime<Utc> = start_date + Duration::days(1);
-    let interval: Duration = Duration::hours(1);
+    let start_date = Utc::now();
+    let end_date = start_date + Duration::days(1);
+    let interval = Duration::hours(1);
 
     // Location definition
-    let p1: Point = Point { lat: 47.249297, lon: 9.342854 };
-    let p2: Point = Point { lat: 50.0, lon: 10.0 };
-    let coords: Vec<Point> = vec![p1, p2];
+    let p1 = Point { lat: 47.249297, lon: 9.342854 };
+    let p2 = Point { lat: 50.0, lon: 10.0 };
+    let coords = vec![p1, p2];
 
     // Parameter selection
-    let param1: String = String::from("t_2m:C");
-    let param2: String = String::from("precip_1h:mm");
-    let params: Vec<String> = vec![param1, param2];
+    let t_2m = String::from("t_2m:C");
+    let precip_1h = String::from("precip_1h:mm");
+    let params = vec![t_2m, precip_1h];
 
     // Optionals
-    let opt1: String = String::from("model=mix");
-    let optionals: Option<Vec<String>> = Option::from(vec![opt1]);
+    let model_mix = String::from("model=mix");
+    let optionals = Option::from(vec![model_mix]);
     
     let result = api.query_time_series(
         &start_date, &end_date, &interval, &params, &coords, &optionals
