@@ -343,6 +343,8 @@ mod tests {
     use crate::location::{Point, BBox};
     use std::path::Path;
     use std::fs;
+    use serde_json;
+    use crate::util::UStatsResponse;
 
 
     #[tokio::test]
@@ -425,5 +427,51 @@ mod tests {
         };
         let coord_str = format!("{}", bbox);
         assert_eq!("90,-180_-90,180:5,5", coord_str);
+    }
+
+    #[tokio::test]
+    async fn check_deserialization() {
+        let s1 = r#"{"message" : "In case the limits don't match your understanding of the contr"#;
+        let s2 = r#"act, please contact us (api@meteomatics.com). For other inquiries please wri"#;
+        let s3 = r#"te to (support@meteomatics.com). Soft or hard limit values of 0 mean that th"#;
+        let s4 = r#"e corresponding limit is not set.", "user statistics" : {"username" : "rusty"#;
+        let s5 = r#"thecrab", "requests total" : {"used" : 4280, "soft limit" : 0, "hard limi"#;
+        let s6 = r#"t" : 0}, "requests since last UTC midnight" : {"used" : 85, "soft limit" : 1"#;
+        let s7 = r#"00000, "hard limit" : 0}, "requests since HH:00:00" : {"used" : 85, "soft lim"#;
+        let s8 = r#"it" : 10000, "hard limit" : 0}, "requests in the last 60 seconds" : {"used" :"#;
+        let s9 = r#" 0, "soft limit" : 0, "hard limit" : 6000}, "requests in parallel" : {"used" "#;
+        let s10 = r#": 0, "soft limit" : 20, "hard limit" : 500}, "historic request option" : "19"#;
+        let s11 = r#"00-01-01T00:00:00Z--2100-01-01T00:00:00Z", "area request option" : true, "mo"#;
+        let s12 = r#"del set" : ["all_minus_euro1k"], "error message" : "", "contact emails" : [""#;
+        let s13 = r#"rustythecrab@rust_connector_api.com"]}}"#;
+        let s = [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13].concat();
+
+        let json: UStatsResponse = serde_json::from_str(&s).unwrap();
+
+        // Check if the message was correctly deserialized.
+        assert_eq!(
+            json.message, 
+            "In case the limits don't match your understanding of the contract, \
+            please contact us (api@meteomatics.com). For other inquiries please \
+            write to (support@meteomatics.com). Soft or hard limit values of 0 \
+            mean that the corresponding limit is not set."
+        );
+
+        // Check if the username was correctly deserialized.
+        assert_eq!(json.stats.username, "rustythecrab");
+
+        // Check if the total requests were correctly dersialized using the Limits struct
+        assert_eq!(json.stats.total.used, 4280);
+        assert_eq!(json.stats.total.soft_lim, 0);
+        assert_eq!(json.stats.total.hard_lim, 0);
+
+        // Check if the area request option was correctly deserialized.
+        assert!(json.stats.area);
+
+        // Check if the model set was correctly deserialized.
+        assert_eq!(json.stats.models[0], "all_minus_euro1k");
+
+        // Check if the contact was correctly deserialized.
+        assert_eq!(json.stats.contact[0], "rustythecrab@rust_connector_api.com");
     }
 }
