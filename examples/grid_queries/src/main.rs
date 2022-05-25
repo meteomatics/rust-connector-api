@@ -7,8 +7,8 @@ use polars::prelude::*;
 #[tokio::main]
 async fn main(){
     // Credentials  
-    // let u_name: String = String::from("python-community");
-    // let u_pw: String = String::from("Umivipawe179");
+    let u_name: String = String::from("python-community");
+    let u_pw: String = String::from("Umivipawe179");
 
     // Create Client
     let api: APIClient = APIClient::new(u_name,u_pw,10);
