@@ -34,7 +34,7 @@ impl APIClient {
     /// Route query using postal codes. 
     pub async fn route_query_postal(
         &self,
-        dates: &Vec<chrono::DateTime<chrono::Utc>>,
+        dates: &[chrono::DateTime<chrono::Utc>],
         pcodes: &[String],
         params: &[String],
     ) -> std::result::Result<polars::frame::DataFrame, ConnectorError> {
@@ -77,8 +77,8 @@ impl APIClient {
     /// Route query using points. 
     pub async fn route_query_points(
         &self,
-        dates: &Vec<chrono::DateTime<chrono::Utc>>,
-        points: &Vec<crate::location::Point>,
+        dates: &[chrono::DateTime<chrono::Utc>],
+        points: &[crate::location::Point],
         params: &[String],
     ) -> std::result::Result<polars::frame::DataFrame, ConnectorError> {
         // Create the dates formatted string
