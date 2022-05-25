@@ -795,7 +795,6 @@ async fn query_user_features(){
 
     let ustats = meteomatics_connector.query_user_features().await.unwrap();
     assert_eq!(env::var("METEOMATICS_USER").unwrap(), ustats.stats.username);
-    assert_eq!(true, ustats.stats.area);
 }
 
 #[tokio::test]
