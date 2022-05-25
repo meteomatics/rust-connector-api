@@ -31,6 +31,49 @@ impl APIClient {
         }
     }
 
+    /// Route query using postal codes. 
+    pub async fn route_query_postal(
+        &self,
+        dates: &Vec<chrono::DateTime<chrono::Utc>>,
+        pcodes: &[String],
+        params: &[String],
+    ) -> std::result::Result<polars::frame::DataFrame, ConnectorError> {
+        // Create the dates formatted string
+        let dates_str: String = dates.iter().map(|d| d.to_rfc3339()).collect::<Vec<String>>().join(",");
+
+        // Create the points formatted string
+        let points_str: String = pcodes.join("+");
+
+        // Create the parameters formatted string
+        let params_str: String = params.join(",");
+
+        // Create the query specs
+        let query_specs = build_route_query_specs(&dates_str, &params_str, &points_str).await;
+
+        // Create the full URL
+        let full_url = build_url(&query_specs).await.map_err(|_| ConnectorError::ParseError)?;
+
+        // Get the query result
+        let result = self.do_http_get(full_url).await;
+
+        // Match the result
+        match result {
+            Ok(response) => match response.status() {
+                StatusCode::OK => {
+                    let df = parse_response_to_df(
+                        response).await?;
+                    Ok(df)
+                }
+                status => Err(ConnectorError::HttpError(
+                    status.to_string(),
+                    response.text().await.unwrap(),
+                    status,
+                )),
+            },
+            Err(_) => Err(ConnectorError::ReqwestError),
+        }
+    }
+
     /// Route query using points. 
     pub async fn route_query_points(
         &self,
