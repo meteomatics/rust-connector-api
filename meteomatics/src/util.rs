@@ -308,6 +308,21 @@ pub async fn build_grid_ts_lightning_query_specs(
     query_specs 
 }
 
+/// Creates the query specs for the route query type.
+pub async fn build_route_query_specs(
+    dates: &str,
+    parameters: &str,
+    coords_str: &str
+) -> String {
+    let query_specs = format!(
+        "{}/{}/{}/csv?route=true",
+        dates,
+        parameters,
+        coords_str
+    );
+    query_specs
+}
+
 /// Combines the default base API URL with the query specific information.
 pub async fn build_url(url_fragment: &str) -> std::result::Result<Url, ParseError> {
     let base_url = Url::parse(BASE_URL).expect("Base URL is known to be valid");
