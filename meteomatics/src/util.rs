@@ -48,7 +48,7 @@ pub struct UserStats{
     pub hist: String,
     #[serde(rename(serialize = "area request option", deserialize = "area request option"))]
     pub area: bool,
-    #[serde(rename(serialize = "model select option", deserialize = "model select option"))]
+    #[serde(rename(serialize = "model set", deserialize = "model set"))]
     pub models: Vec<String>,
     #[serde(rename(serialize = "error message", deserialize = "error message"))]
     pub error: String,
