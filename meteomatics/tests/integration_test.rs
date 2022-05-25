@@ -783,3 +783,94 @@ async fn query_user_features(){
     assert_eq!(env::var("METEOMATICS_USER").unwrap(), ustats.stats.username);
     assert_eq!(true, ustats.stats.area);
 }
+
+#[tokio::test]
+async fn query_lightning(){
+    // Query using rust connector
+    // Credentials
+    dotenv().ok();
+    let api_key: String = env::var("METEOMATICS_PW").unwrap();
+    let api_user: String = env::var("METEOMATICS_USER").unwrap();
+    
+    // Create API connector
+    let meteomatics_connector = APIClient::new(
+        api_user,
+        api_key,
+        10,
+    );
+
+    // Create time information
+    let start_date = Utc.ymd(2022, 5, 20).and_hms_micro(10, 0, 0, 0);
+    let end_date = start_date + Duration::days(1);
+
+    // Create Location
+    let bbox: BBox = BBox {
+        lat_min: 45.8179716,
+        lat_max: 47.8084648,
+        lon_min: 5.9559113,
+        lon_max: 10.4922941,
+        lat_res: 0.0,
+        lon_res: 0.0
+    };
+
+    let df = meteomatics_connector.query_lightning(
+        &start_date, &end_date, &bbox
+    ).await.unwrap();
+
+    println!("{:?}", df);
+}
+
+#[tokio::test]
+async fn query_route_points(){
+    let s = r#"lat;lon;validdate;t_2m:C;precip_1h:mm;sunshine_duration_1h:min
+    47.423938;9.372858;2021-05-25T12:00:00Z;11.5;0.00;60.0
+    47.499419;8.726517;2021-05-25T13:00:00Z;13.2;0.06;58.6
+    47.381967;8.530662;2021-05-25T14:00:00Z;13.4;0.00;24.3
+    46.949911;7.430099;2021-05-25T15:00:00Z;12.8;0.00;53.5
+    "#;
+
+    let file = Cursor::new(s);
+    let df_s = CsvReader::new(file)
+        .infer_schema(Some(100))
+        .has_header(true)
+        .with_delimiter(b';')
+        .with_ignore_parser_errors(true)
+        .finish()
+        .unwrap();
+
+    // Query using rust connector
+    // Credentials
+    dotenv().ok();
+    let api_key: String = env::var("METEOMATICS_PW").unwrap();
+    let api_user: String = env::var("METEOMATICS_USER").unwrap();
+    
+    // Create API connector
+    let meteomatics_connector = APIClient::new(
+        api_user,
+        api_key,
+        10,
+    );
+
+    // Create time information
+    let date1 = Utc.ymd(2021, 5, 25).and_hms_micro(12, 0, 0, 0);
+    let date2 = Utc.ymd(2021, 5, 25).and_hms_micro(13, 0, 0, 0);
+    let date3 = Utc.ymd(2021, 5, 25).and_hms_micro(14, 0, 0, 0);
+    let date4 = Utc.ymd(2021, 5, 25).and_hms_micro(15, 0, 0, 0);
+    let dates = vec![date1, date2, date3, date4];
+
+    // Create Parameters
+    let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm"), String::from("sunshine_duration_1h:min")];
+
+    // Create Locations
+    let p1: Point = Point { lat: 47.423938, lon: 9.372858};
+    let p2: Point = Point { lat: 47.499419, lon: 8.726517};
+    let p3: Point = Point { lat: 47.381967, lon: 8.530662};
+    let p4: Point = Point { lat: 46.949911, lon: 7.430099};
+    let coords = vec![p1, p2, p3, p4];
+
+    let df_r = meteomatics_connector.route_query_points(
+        &dates, &coords, &parameters
+    ).await.unwrap();
+
+    assert_eq!(df_s, df_r);
+}
