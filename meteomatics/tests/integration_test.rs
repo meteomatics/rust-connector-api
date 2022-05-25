@@ -9,11 +9,25 @@ use std::fs;
 use std::path::Path;
 
 // Unit testing section
-// TODO: Add option to query for a grid
-// TODO: Add option to query for a grid timeseries
 #[tokio::test]
 async fn call_query_time_series_with_options() {
-    println!("\n##### call_query_time_series_with_options:");
+    let s = r#"lat;lon;validdate;t_2m:C;precip_1h:mm
+    52.520551;13.461804;1989-11-09T18:00:00Z;7.8;0.00
+    52.520551;13.461804;1989-11-10T06:00:00Z;3.2;0.00
+    52.520551;13.461804;1989-11-10T18:00:00Z;7.6;0.00
+    -52.520551;13.461804;1989-11-09T18:00:00Z;-1.7;0.00
+    -52.520551;13.461804;1989-11-10T06:00:00Z;-2.2;0.00
+    -52.520551;13.461804;1989-11-10T18:00:00Z;-1.4;0.00
+    "#;
+
+    let file = Cursor::new(s);
+    let df_s = CsvReader::new(file)
+        .infer_schema(Some(100))
+        .has_header(true)
+        .with_ignore_parser_errors(true)
+        .with_delimiter(b';')
+        .finish()
+        .unwrap();
 
     // Credentials
     dotenv().ok();
@@ -28,9 +42,9 @@ async fn call_query_time_series_with_options() {
     );
 
     // Create time information
-    let start_date = Utc.ymd(2022, 5, 17).and_hms(12, 00, 00);
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(1);
+    let interval = Duration::hours(12);
 
     // Create Parameters
     let mut parameters = Vec::new();
@@ -48,28 +62,36 @@ async fn call_query_time_series_with_options() {
     optionals.push(String::from("calibrated=true"));
 
     // Call endpoint
-    let result = meteomatics_connector
+    let df_q = meteomatics_connector
         .query_time_series(
             &start_date, &end_date, &interval, &parameters, &coords, &Option::from(optionals)
         )
-        .await;
+        .await.unwrap();
 
-    match result {
-        Ok(ref df) => {
-            println!("{:?}", df);
-        }
-        Err(ref connector_error) => {
-            println!(">>>>>>>>>> ConnectorError: {:#?}", connector_error);
-            assert!(result.is_err());
-        }
-    }
-
-    assert!(result.is_ok());
+    println!("Rust result: {:?}", df_q);
+    println!("Python result: {:?}", df_s);
+    assert!(df_s.frame_equal(&df_q));
 }
 
 #[tokio::test]
 async fn call_query_time_series_without_options() {
-    println!("\n##### call_query_time_series_without_options:");
+    let s = r#"lat;lon;validdate;t_2m:C;precip_1h:mm
+    52.520551;13.461804;1989-11-09T18:00:00Z;6.8;0.00
+    52.520551;13.461804;1989-11-10T06:00:00Z;1.4;0.00
+    52.520551;13.461804;1989-11-10T18:00:00Z;5.2;0.00
+    -52.520551;13.461804;1989-11-09T18:00:00Z;-1.7;0.00
+    -52.520551;13.461804;1989-11-10T06:00:00Z;-2.2;0.00
+    -52.520551;13.461804;1989-11-10T18:00:00Z;-1.4;0.00
+    "#;
+
+    let file = Cursor::new(s);
+    let df_s = CsvReader::new(file)
+        .infer_schema(Some(100))
+        .has_header(true)
+        .with_ignore_parser_errors(true)
+        .with_delimiter(b';')
+        .finish()
+        .unwrap();
 
     // Credentials
     dotenv().ok();
@@ -84,9 +106,9 @@ async fn call_query_time_series_without_options() {
     );
 
     // Create time information
-    let start_date = Utc.ymd(2022, 5, 17).and_hms(12, 00, 00);
+    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(1);
+    let interval = Duration::hours(12);
 
     // Create Parameters
     let mut parameters = Vec::new();
@@ -99,21 +121,13 @@ async fn call_query_time_series_without_options() {
     let coords: Vec<Point> = vec![p1, p2];
 
     // Call endpoint
-    let result = meteomatics_connector
+    let df_q = meteomatics_connector
         .query_time_series(&start_date, &end_date, &interval, &parameters, &coords, &None)
-        .await;
+        .await.unwrap();
 
-    match result {
-        Ok(ref df) => {
-           println!("{:?}", df);
-        }
-        Err(ref connector_error) => {
-            println!(">>>>>>>>>> ConnectorError: {:#?}", connector_error);
-            assert!(result.is_err());
-        }
-    }
-
-    assert!(result.is_ok());
+    println!("Rust result: {:?}", df_q);
+    println!("Python result: {:?}", df_s);
+    assert!(df_s.frame_equal(&df_q));
 }
 
 #[tokio::test]
