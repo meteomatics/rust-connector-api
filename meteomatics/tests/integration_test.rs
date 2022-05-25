@@ -658,6 +658,9 @@ async fn query_netcdf() {
     let dir: &Path = Path::new(&file_name).parent().unwrap();
     fs::remove_file(&file_name).unwrap();
     fs::remove_dir_all(&dir).unwrap();
+    // Check if the file and the directory were removed.
+    assert!(!Path::new(&file_name).exists());
+    assert!(!Path::new(&dir).exists());
 }
 
 #[tokio::test]
@@ -715,6 +718,9 @@ async fn query_png() {
     let dir: &Path = Path::new(&file_name).parent().unwrap();
     fs::remove_file(&file_name).unwrap();
     fs::remove_dir_all(&dir).unwrap();
+    // Check if the file and the directory were removed.
+    assert!(!Path::new(&file_name).exists());
+    assert!(!Path::new(&dir).exists());
 }
 
 #[tokio::test]
@@ -739,7 +745,7 @@ async fn query_grid_png_timeseries() {
     let interval = Duration::hours(12);
 
     // Create Parameters
-    let parameter =String::from("t_2m:C");
+    let parameter = String::from("t_2m:C");
 
     // Create Location
     let bbox: BBox = BBox {
@@ -776,6 +782,9 @@ async fn query_grid_png_timeseries() {
     let dir: &Path = Path::new(&file_name).parent().unwrap();
     fs::remove_file(&file_name).unwrap();
     fs::remove_dir_all(&dir).unwrap();
+    // Check if the file and the directory were removed.
+    assert!(!Path::new(&file_name).exists());
+    assert!(!Path::new(&dir).exists());
 }
 
 #[tokio::test]
