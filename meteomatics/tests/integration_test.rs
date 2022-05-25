@@ -874,3 +874,58 @@ async fn query_route_points(){
 
     assert_eq!(df_s, df_r);
 }
+
+#[tokio::test]
+async fn query_route_postal(){
+    let s = r#"station_id;validdate;t_2m:C;precip_1h:mm;sunshine_duration_1h:min
+    postal_CH9000;2021-05-25T12:00:00Z;11.4;0.00;60.0
+    postal_CH8400;2021-05-25T13:00:00Z;13.2;0.03;56.4
+    postal_CH8000;2021-05-25T14:00:00Z;13.4;0.00;21.9
+    postal_CH3000;2021-05-25T15:00:00Z;12.6;0.00;20.1
+    "#;
+
+    let file = Cursor::new(s);
+    let df_s = CsvReader::new(file)
+        .infer_schema(Some(100))
+        .has_header(true)
+        .with_delimiter(b';')
+        .with_ignore_parser_errors(true)
+        .finish()
+        .unwrap();
+
+    // Query using rust connector
+    // Credentials
+    dotenv().ok();
+    let api_key: String = env::var("METEOMATICS_PW").unwrap();
+    let api_user: String = env::var("METEOMATICS_USER").unwrap();
+    
+    // Create API connector
+    let meteomatics_connector = APIClient::new(
+        api_user,
+        api_key,
+        10,
+    );
+
+    // Create time information
+    let date1 = Utc.ymd(2021, 5, 25).and_hms_micro(12, 0, 0, 0);
+    let date2 = Utc.ymd(2021, 5, 25).and_hms_micro(13, 0, 0, 0);
+    let date3 = Utc.ymd(2021, 5, 25).and_hms_micro(14, 0, 0, 0);
+    let date4 = Utc.ymd(2021, 5, 25).and_hms_micro(15, 0, 0, 0);
+    let dates = vec![date1, date2, date3, date4];
+
+    // Create Parameters
+    let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm"), String::from("sunshine_duration_1h:min")];
+
+    // Create Locations
+    let pcode1 = String::from("postal_CH9000");
+    let pcode2 = String::from("postal_CH8400");
+    let pcode3 = String::from("postal_CH8000");
+    let pcode4 = String::from("postal_CH3000");
+    let coords = vec![pcode1, pcode2, pcode3, pcode4];
+
+    let df_r = meteomatics_connector.route_query_postal(
+        &dates, &coords, &parameters
+    ).await.unwrap();
+
+    assert_eq!(df_s, df_r);
+}
