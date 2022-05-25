@@ -11,3 +11,4 @@ tokio = { version = "1", features = ["full"] }
 chrono = "0.4"
 polars = "0.21.1"
 netcdf = "0.7.0"
+dotenv = "0.15.0"

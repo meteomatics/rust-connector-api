@@ -1,13 +1,28 @@
-use chrono::{Utc, DateTime, Duration};
+//! # NetCDF Query 
+//! This is a demonstration of how to download a NetCDF (Network Common Data Format) for an area or 
+//! "grid" defined by a bounding-box and with a defined grid resolution (e.g. 0.1 °). 
+//! To run the example either change ```u_name``` and ```u_pw```
+//! directly *or* create a file called ```.env``` and put the following lines in there:
+//! ```text
+//! METEOMATICS_PW=your_password
+//! METEOMATICS_USER=your_username
+//! ```
+//! Make sure to include ```.env``` in your ```.gitignore```. This is a safer variant for developers 
+//! to work with API credentials as you will never accidentally commit/push your credentials.
+
+use chrono::{Utc, Duration};
 use rust_connector_api::APIClient;
 use rust_connector_api::location::BBox;
 use rust_connector_api::errors::ConnectorError;
+use std::env;
+use dotenv::dotenv;
 
 #[tokio::main]
 async fn main(){
-    // Credentials  
-    let u_name: String = String::from("python-community");
-    let u_pw: String = String::from("Umivipawe179");
+    // Credentials
+    dotenv().ok();
+    let u_pw: String = env::var("METEOMATICS_PW").unwrap();
+    let u_name: String = env::var("METEOMATICS_USER").unwrap();
 
     // Create Client
     let api: APIClient = APIClient::new(u_name,u_pw,10);
@@ -18,22 +33,22 @@ async fn main(){
     example_request(&api, &file_name).await.unwrap();
 
     // Look at the NetCDF
-    let file = netcdf::open(&file_name).unwrap();
-    let var = &file.variable("t_2m").expect("Could not find variable 't_2m");
+    let nc_file = netcdf::open(&file_name).unwrap();
+    let temp2m = &nc_file.variable("t_2m").expect("Could not find variable 't_2m");
     // Access the slice at [0, 0, 0] and get dataset of size [1, 10, 10]
-    let data = var.values::<f64>(Some(&[0,0,0]), Some(&[1, 10, 10])).unwrap();
+    let temp2m_slice = temp2m.values::<f64>(Some(&[0,0,0]), Some(&[1, 10, 10])).unwrap();
 
     // Print the query result
-    println!("{:?}", data);
+    println!("{:?}", temp2m_slice);
    
 }
 
 /// Query a time series for a single point and two parameters.
 async fn example_request(api: &APIClient, file_name: &String) -> std::result::Result<(), ConnectorError>{
     // Time series definition
-    let start_date: DateTime<Utc> = Utc::now();
-    let end_date: DateTime<Utc> = start_date + Duration::days(1);
-    let interval: Duration = Duration::hours(1);
+    let start_date = Utc::now();
+    let end_date = start_date + Duration::days(1);
+    let interval = Duration::hours(1);
 
     // Location definition
     let ch: BBox = BBox {
@@ -46,15 +61,15 @@ async fn example_request(api: &APIClient, file_name: &String) -> std::result::Re
     };
 
     // Parameter selection
-    let param1: String = String::from("t_2m:C");
+    let t_2m = String::from("t_2m:C");
 
     // Optionals
-    let opt1: String = String::from("model=mix");
-    let optionals: Option<Vec<String>> = Option::from(vec![opt1]);
+    let model_mix = String::from("model=mix");
+    let optionals = Option::from(vec![model_mix]);
 
     // Download the NetCDF
     let result = api.query_netcdf(
-        &start_date, &end_date, &interval, &param1, &ch, file_name, &optionals
+        &start_date, &end_date, &interval, &t_2m, &ch, file_name, &optionals
     ).await;
 
     result
