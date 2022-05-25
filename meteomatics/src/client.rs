@@ -60,8 +60,11 @@ impl APIClient {
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
-                    let df = parse_response_to_df(
+                    let mut df = parse_response_to_df(
                         response).await?;
+                    df.rename("stroke_time:sql", "validdate")?;
+                    df.rename("stroke_lat:d", "lat")?;
+                    df.rename("stroke_lon:d", "lon")?;
                     Ok(df)
                 }
                 status => Err(ConnectorError::HttpError(
