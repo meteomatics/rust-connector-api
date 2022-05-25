@@ -110,3 +110,5 @@ pub mod client;
 pub mod location;
 pub mod util;
 pub use client::APIClient;
+pub use location::Point;
+pub use location::BBox;
