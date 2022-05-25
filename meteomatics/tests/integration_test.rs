@@ -630,7 +630,7 @@ async fn query_netcdf() {
     };
 
     // Create file name
-    let file_name: String = String::from("tests/netcdf/my_netcdf.nc");
+    let file_name = String::from("tests/netcdf/my_netcdf.nc");
 
     // Call endpoint
     meteomatics_connector
@@ -641,18 +641,18 @@ async fn query_netcdf() {
         .unwrap();
 
     // Make some tests
-    let file = netcdf::open(&file_name).unwrap();
-    let var = &file.variable("t_2m").expect("Could not find variable 't_2m");
+    let nc_file = netcdf::open(&file_name).unwrap();
+    let temperature = &nc_file.variable("t_2m").expect("Could not find variable 't_2m");
 
     // Check value: ds_rust["t_2m"].data[0,0,0]
-    let xr_test: f64 = 6.81058931350708;
-    let temp_f64: f64 = var.value(Some(&[0,0,0])).unwrap();
-    assert_eq!(xr_test, temp_f64);
+    let temp_val_ref: f64 = 6.81058931350708; // extracted in Python 
+    let temp_val_here: f64 = temperature.value(Some(&[0,0,0])).unwrap(); // extracted from file
+    assert_eq!(temp_val_ref, temp_val_here);
 
     // Check another value: ds_rust["t_2m"].data[2,2,2]
-    let xr_test: f64 = 5.269172668457031;
-    let temp_f64: f64 = var.value(Some(&[2,2,2])).unwrap();
-    assert_eq!(xr_test, temp_f64);
+    let temp_val_ref: f64 = 5.269172668457031;
+    let temp_val_here: f64 = temperature.value(Some(&[2,2,2])).unwrap();
+    assert_eq!(temp_val_ref, temp_val_here);
 
     // Remove the file    
     let dir: &Path = Path::new(&file_name).parent().unwrap();
@@ -664,7 +664,6 @@ async fn query_netcdf() {
 }
 
 #[tokio::test]
-// TODO: Add more tests for actual data content.
 async fn query_png() {
     // Query using rust connector
     // Credentials
@@ -684,7 +683,7 @@ async fn query_png() {
     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
 
     // Create Parameters
-    let parameter =String::from("t_2m:C");
+    let parameter = String::from("t_2m:C");
 
     // Create Location
     let bbox: BBox = BBox {
@@ -697,7 +696,7 @@ async fn query_png() {
     };
 
     // Create file name
-    let file_name: String = String::from("tests/png/my_png.png");
+    let file_name = String::from("tests/png/my_png.png");
 
     // Call endpoint
     meteomatics_connector
