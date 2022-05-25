@@ -165,12 +165,11 @@ async fn query_time_series_one_point_one_param() {
     let interval = Duration::hours(12);
 
     // Create Parameters
-    let mut parameters = Vec::new();
-    parameters.push(String::from("t_2m:C"));
+    let parameters = vec![String::from("t_2m:C")];
 
     // Create Locations
-    let p1: Point = Point { lat: 52.52, lon: 13.405};
-    let coords: Vec<Point> = vec![p1];
+    let p1 = Point { lat: 52.52, lon: 13.405};
+    let coords = vec![p1];
 
     // Call endpoint
     let df_q = meteomatics_connector
@@ -379,7 +378,7 @@ async fn query_time_series_two_postal_two_param() {
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
 
     // Create Locations
-    let postal1: Vec<String> = vec![String::from("postal_CH8000"), String::from("postal_CH9000")];
+    let postal1 = vec![String::from("postal_CH8000"), String::from("postal_CH9000")];
 
     // Call endpoint
     let df_q = meteomatics_connector
@@ -427,7 +426,7 @@ async fn query_grid_pivoted() {
     let parameter = String::from("t_2m:C");
 
     // Create Location
-    let bbox: BBox = BBox {
+    let bbox = BBox {
         lat_min: 52.40,
         lat_max: 52.50,
         lon_min: 13.40,
@@ -490,7 +489,7 @@ async fn query_grid_unpivoted() {
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
 
     // Create Location
-    let bbox: BBox = BBox {
+    let bbox = BBox {
         lat_min: 52.40,
         lat_max: 52.50,
         lon_min: 13.40,
@@ -574,7 +573,7 @@ async fn query_grid_unpivoted_time_series() {
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
 
     // Create Location
-    let bbox: BBox = BBox {
+    let bbox = BBox {
         lat_min: 52.40,
         lat_max: 52.50,
         lon_min: 13.40,
@@ -620,7 +619,7 @@ async fn query_netcdf() {
     let parameter =String::from("t_2m:C");
 
     // Create Location
-    let bbox: BBox = BBox {
+    let bbox = BBox {
         lat_min: 52.40,
         lat_max: 52.50,
         lon_min: 13.40,
@@ -686,7 +685,7 @@ async fn query_png() {
     let parameter = String::from("t_2m:C");
 
     // Create Location
-    let bbox: BBox = BBox {
+    let bbox = BBox {
         lat_min: 45.8179716,
         lat_max: 47.8084648,
         lon_min: 5.9559113,
@@ -747,7 +746,7 @@ async fn query_grid_png_timeseries() {
     let parameter = String::from("t_2m:C");
 
     // Create Location
-    let bbox: BBox = BBox {
+    let bbox = BBox {
         lat_min: 45.8179716,
         lat_max: 47.8084648,
         lon_min: 5.9559113,
