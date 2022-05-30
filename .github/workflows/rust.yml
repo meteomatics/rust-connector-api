@@ -16,6 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: HDF5
+      run: |
+        sudo apt-get update
+        sudo apt-get install libhdf5-serial-dev
     - name: Build
       working-directory: meteomatics
       run: cargo build
