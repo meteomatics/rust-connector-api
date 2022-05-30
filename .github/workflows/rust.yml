@@ -1,0 +1,24 @@
+name: Rust
+
+on:
+  push:
+    branches: [ main, structure_revamp ]
+  pull_request:
+    branches: [ main, structure_revamp ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      working-directory: ./meteomatics
+      run: cargo build --verbose
+    - name: Run tests
+      working-directory: ./meteomatics
+      run: cargo test --verbose
