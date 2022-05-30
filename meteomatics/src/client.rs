@@ -20,9 +20,10 @@ impl APIClient {
     /// 
     /// # Examples
     ///
-    /// ```
+    /// ```rust, no_run
+    /// use rust_connector_api::APIClient;
     /// // New client with username, password and 10 second request timeout.
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
+    /// let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
     /// ```
     pub fn new(username: String, password: String, timeout_seconds: u64) -> Self {
         // safe to use unwrap, since we want to panic if the client builder fails.
@@ -42,13 +43,18 @@ impl APIClient {
     ///  
     /// # Examples
     ///
-    /// ```
-    /// use chrono::prelude::*;
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
-    /// let dates = vec![Utc.now(), Utc.now(), Utc.now()];
-    /// let pcodes = vec![String::from("postal_CH8000"), String::from("postal_CH9000")];
-    /// let params = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
-    /// let df_route = client.route_query_postal(&dates, &pcodes, &params).await.unwrap();
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration};
+    /// use rust_connector_api::APIClient;
+    /// 
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let dates = vec![Utc::now(), Utc::now(), Utc::now()];
+    ///     let pcodes = vec!["postal_CH8000".to_string(), "postal_CH9000".to_string()];
+    ///     let params = vec!["t_2m:C".to_string(), "precip_1h:mm".to_string()];
+    ///     let df_route = client.route_query_postal(&dates, &pcodes, &params).await.unwrap();
+    /// }
     /// ```
     pub async fn route_query_postal(
         &self,
@@ -95,26 +101,30 @@ impl APIClient {
     /// Route query using points. 
     /// # Examples
     ///
-    /// ```
-    /// use chrono::prelude::*;
-    /// use crate::location::Point;
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::Point;
     /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
     /// 
-    /// // Create time information
-    /// let date1 = Utc.ymd(2021, 5, 25).and_hms_micro(12, 0, 0, 0);
-    /// let date2 = Utc.ymd(2021, 5, 25).and_hms_micro(13, 0, 0, 0);
-    /// let dates = vec![date1, date2];
+    ///     // Create time information
+    ///     let date1 = Utc.ymd(2021, 5, 25).and_hms_micro(12, 0, 0, 0);
+    ///     let date2 = Utc.ymd(2021, 5, 25).and_hms_micro(13, 0, 0, 0);
+    ///     let dates = vec![date1, date2];
     ///
-    /// // Create Parameters
-    /// let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
+    ///     // Create Parameters
+    ///     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
     ///
-    /// // Create Locations
-    /// let p1: Point = Point { lat: 47.423938, lon: 9.372858};
-    /// let p2: Point = Point { lat: 47.499419, lon: 8.726517};
-    /// let coords = vec![p1, p2];
+    ///     // Create Locations
+    ///     let p1: Point = Point { lat: 47.423938, lon: 9.372858};
+    ///     let p2: Point = Point { lat: 47.499419, lon: 8.726517};
+    ///     let coords = vec![p1, p2];
     /// 
-    /// let df_route = client.route_query_points(&dates, &parameters, &coords).await.unwrap();
+    ///     let df_route = client.route_query_points(&dates, &coords, &parameters).await.unwrap();
+    /// }
     /// ```
     pub async fn route_query_points(
         &self,
@@ -162,27 +172,31 @@ impl APIClient {
     /// 
     /// # Examples
     /// 
-    /// ```
-    /// use chrono::prelude::*;
-    /// use crate::location::BBox;
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::BBox;
     /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
-    /// 
-    /// // Create time information
-    /// let start_date = Utc.ymd(2022, 5, 20).and_hms_micro(10, 0, 0, 0);
-    /// let end_date = start_date + Duration::days(1);
-    /// 
-    /// // Create Location
-    /// let bbox: BBox = BBox {
-    ///     lat_min: 45.8179716,
-    ///     lat_max: 47.8084648,
-    ///     lon_min: 5.9559113,
-    ///     lon_max: 10.4922941,
-    ///     lat_res: 0.0,
-    ///     lon_res: 0.0
-    /// };
-    /// 
-    /// let df_lightning = client.query_lightning(&start_date, &end_date, &bbox).await.unwrap();
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     
+    ///     // Create time information
+    ///     let start_date = Utc.ymd(2022, 5, 20).and_hms_micro(10, 0, 0, 0);
+    ///     let end_date = start_date + Duration::days(1);
+    ///     
+    ///     // Create Location
+    ///     let bbox: BBox = BBox {
+    ///         lat_min: 45.8179716,
+    ///         lat_max: 47.8084648,
+    ///         lon_min: 5.9559113,
+    ///         lon_max: 10.4922941,
+    ///         lat_res: 0.0,
+    ///         lon_res: 0.0
+    ///     };
+    ///     
+    ///     let df_lightning = client.query_lightning(&start_date, &end_date, &bbox).await.unwrap();
+    /// }
     /// ```
     pub async fn query_lightning(
         &self,
@@ -232,10 +246,15 @@ impl APIClient {
     /// Returns a struct with information about your account.
     /// 
     /// # Examples
-    /// ```
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
-    /// let ustats = meteomatics_connector.query_user_features().await.unwrap();
-    /// println!("user: {}, total requests: {}", ustats.stats.username, ustats.stats.total.used);
+    /// ```rust, no_run
+    /// use rust_connector_api::APIClient;
+    /// 
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let ustats = client.query_user_features().await.unwrap();
+    ///     println!("user: {}, total requests: {}", ustats.stats.username, ustats.stats.total.used);
+    /// }
     /// ```
     pub async fn query_user_features(&self) -> Result<UStatsResponse, ConnectorError>{
         let query_specs = String::from("user_stats_json");
@@ -261,29 +280,33 @@ impl APIClient {
     /// 
     /// # Examples
     /// 
-    /// ```
-    /// use chrono::prelude::*,
-    /// use crate::location::Point;
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::Point;
     /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     
+    ///     // Create time information
+    ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    ///     let end_date = start_date + Duration::days(1);
+    ///     let interval = Duration::hours(12);
     /// 
-    /// // Create time information
-    /// let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    /// let end_date = start_date + Duration::days(1);
-    /// let interval = Duration::hours(12);
-    ///
-    /// // Create Parameters
-    /// let parameters = vec![String::from("t_2m:C")];
-    ///
-    /// // Create Locations
-    /// let p1 = Point { lat: 52.52, lon: 13.405};
-    /// let coords = vec![p1];
-    ///
-    /// // Get query result 
-    /// let df_point_ts = client
-    ///     .query_time_series(&start_date, &end_date, &interval, &parameters, &coords, &None)
-    ///     .await
-    ///     .unwrap();
+    ///     // Create Parameters
+    ///     let parameters = vec![String::from("t_2m:C")];
+    /// 
+    ///     // Create Locations
+    ///     let p1 = Point { lat: 52.52, lon: 13.405};
+    ///     let coords = vec![p1];
+    /// 
+    ///     // Get query result 
+    ///     let df_point_ts = client
+    ///         .query_time_series(&start_date, &end_date, &interval, &parameters, &coords, &None)
+    ///         .await
+    ///         .unwrap();
+    /// }
     /// ```
     pub async fn query_time_series(
         &self,
@@ -344,28 +367,33 @@ impl APIClient {
     /// 
     /// # Examples
     /// 
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::Point;
+    /// 
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     
+    ///     // Create time information
+    ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    ///     let end_date = start_date + Duration::days(1);
+    ///     let interval = Duration::hours(12);
+    /// 
+    ///     // Create Parameters
+    ///     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
+    /// 
+    ///     // Create Locations
+    ///     let postal1 = vec![String::from("postal_CH8000"), String::from("postal_CH9000")];
+    /// 
+    ///     // Call endpoint
+    ///     let df_ts_postal = client
+    ///         .query_time_series_postal(&start_date, &end_date, &interval, &parameters, &postal1, &None)
+    ///         .await
+    ///         .unwrap();
+    /// }
     /// ```
-    /// use chrono::prelude::*,
-    /// use crate::location::Point;
-    /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
-    /// 
-    /// // Create time information
-    /// let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    /// let end_date = start_date + Duration::days(1);
-    /// let interval = Duration::hours(12);
-    ///
-    /// // Create Parameters
-    /// let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
-    ///
-    /// // Create Locations
-    /// let postal1 = vec![String::from("postal_CH8000"), String::from("postal_CH9000")];
-    ///
-    /// // Call endpoint
-    /// let df_ts_postal = client
-    ///     .query_time_series_postal(&start_date, &end_date, &interval, &parameters, &postal1, &None)
-    ///     .await
-    ///     .unwrap();
     pub async fn query_time_series_postal(&self,
         start_date: &chrono::DateTime<chrono::Utc>,
         end_date: &chrono::DateTime<chrono::Utc>,
@@ -424,34 +452,38 @@ impl APIClient {
     /// 
     /// # Examples
     /// 
-    /// ```
-    /// use chrono::prelude::*,
-    /// use crate::location::BBox;
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::BBox;
     /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     
+    ///     // Create time information
+    ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     /// 
-    /// // Create time information
-    /// let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    ///
-    /// // Create Parameters
-    /// let parameter = String::from("t_2m:C");
-    ///
-    /// // Create Location
-    /// let bbox = BBox {
-    ///     lat_min: 52.40,
-    ///     lat_max: 52.50,
-    ///     lon_min: 13.40,
-    ///     lon_max: 13.50,
-    ///     lat_res: 0.05,
-    ///     lon_res: 0.05
-    /// };
-    ///
-    /// // Call endpoint
-    /// let df_grid_piv = client.query_grid_pivoted(
-    ///     &start_date, &parameter, &bbox, &None
-    ///     )
-    ///     .await
-    ///     .unwrap();
+    ///     // Create Parameters
+    ///     let parameter = String::from("t_2m:C");
+    /// 
+    ///     // Create Location
+    ///     let bbox = BBox {
+    ///         lat_min: 52.40,
+    ///         lat_max: 52.50,
+    ///         lon_min: 13.40,
+    ///         lon_max: 13.50,
+    ///         lat_res: 0.05,
+    ///         lon_res: 0.05
+    ///     };
+    /// 
+    ///     // Call endpoint
+    ///     let df_grid_piv = client.query_grid_pivoted(
+    ///         &start_date, &parameter, &bbox, &None
+    ///         )
+    ///         .await
+    ///         .unwrap();
+    /// }
     /// ```
     pub async fn query_grid_pivoted(&self,
         start_date: &chrono::DateTime<chrono::Utc>,
@@ -496,34 +528,38 @@ impl APIClient {
     /// 
     /// # Examples
     /// 
-    /// ```
-    /// use chrono::prelude::*,
-    /// use crate::location::BBox;
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::BBox;
     /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     
+    ///     // Create time information
+    ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     /// 
-    /// // Create time information
-    /// let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    ///
-    /// // Create Parameters
-    /// let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
-    ///
-    /// // Create Location
-    /// let bbox = BBox {
-    ///     lat_min: 52.40,
-    ///     lat_max: 52.50,
-    ///     lon_min: 13.40,
-    ///     lon_max: 13.50,
-    ///     lat_res: 0.05,
-    ///     lon_res: 0.05
-    /// };
-    ///
-    /// // Call endpoint
-    /// let df_grid_unpiv = client.query_grid_unpivoted(
-    ///     &start_date, &parameters, &bbox, &None
-    ///     )
-    ///     .await
-    ///     .unwrap();
+    ///     // Create Parameters
+    ///     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
+    /// 
+    ///     // Create Location
+    ///     let bbox = BBox {
+    ///         lat_min: 52.40,
+    ///         lat_max: 52.50,
+    ///         lon_min: 13.40,
+    ///         lon_max: 13.50,
+    ///         lat_res: 0.05,
+    ///         lon_res: 0.05
+    ///     };
+    /// 
+    ///     // Call endpoint
+    ///     let df_grid_unpiv = client.query_grid_unpivoted(
+    ///         &start_date, &parameters, &bbox, &None
+    ///         )
+    ///         .await
+    ///         .unwrap();
+    /// }
     /// ```
     pub async fn query_grid_unpivoted(&self,
         start_date: &chrono::DateTime<chrono::Utc>,
@@ -571,38 +607,42 @@ impl APIClient {
     /// 
     /// # Examples
     /// 
-    /// ```
-    /// use chrono::prelude::*,
-    /// use crate::location::BBox;
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::BBox;
     /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     
+    ///     // Create time information
+    ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
+    ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    ///     let end_date = start_date + Duration::days(1);
+    ///     let interval = Duration::hours(12);
     /// 
-    /// // Create time information
-    /// // 1989-11-09 19:00:00 --> 18:00:00 UTC
-    /// let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    /// let end_date = start_date + Duration::days(1);
-    /// let interval = Duration::hours(12);
-    ///
-    /// // Create Parameters
-    /// let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
-    ///
-    /// // Create Location
-    /// let bbox = BBox {
-    ///     lat_min: 52.40,
-    ///     lat_max: 52.50,
-    ///     lon_min: 13.40,
-    ///     lon_max: 13.50,
-    ///     lat_res: 0.05,
-    ///     lon_res: 0.05
-    /// };
-    ///
-    /// // Call endpoint
-    /// let df_grid_unpiv_ts = client
-    ///     .query_grid_unpivoted_time_series(
-    ///         &start_date, &end_date, &interval, &parameters, &bbox, &None
-    ///     )
-    ///     .await
-    ///     .unwrap();
+    ///     // Create Parameters
+    ///     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
+    /// 
+    ///     // Create Location
+    ///     let bbox = BBox {
+    ///         lat_min: 52.40,
+    ///         lat_max: 52.50,
+    ///         lon_min: 13.40,
+    ///         lon_max: 13.50,
+    ///         lat_res: 0.05,
+    ///         lon_res: 0.05
+    ///     };
+    /// 
+    ///     // Call endpoint
+    ///     let df_grid_unpiv_ts = client
+    ///         .query_grid_unpivoted_time_series(
+    ///             &start_date, &end_date, &interval, &parameters, &bbox, &None
+    ///         )
+    ///         .await
+    ///         .unwrap();
+    /// }
     /// ```
     pub async fn query_grid_unpivoted_time_series(&self,
         start_date: &chrono::DateTime<chrono::Utc>,
@@ -649,40 +689,44 @@ impl APIClient {
     /// 
     /// # Examples
     /// 
-    /// ```
-    /// use chrono::prelude::*,
-    /// use crate::location::BBox;
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::BBox;
     /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     
+    ///     // Create time information
+    ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
+    ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    ///     let end_date = start_date + Duration::days(1);
+    ///     let interval = Duration::hours(12);
     /// 
-    /// // Create time information
-    /// // 1989-11-09 19:00:00 --> 18:00:00 UTC
-    /// let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    /// let end_date = start_date + Duration::days(1);
-    /// let interval = Duration::hours(12);
-    ///
-    /// // Create Parameters
-    /// let parameter =String::from("t_2m:C");
-    ///
-    /// // Create Location
-    /// let bbox = BBox {
-    ///     lat_min: 52.40,
-    ///     lat_max: 52.50,
-    ///     lon_min: 13.40,
-    ///     lon_max: 13.50,
-    ///     lat_res: 0.05,
-    ///     lon_res: 0.05
-    /// };
-    ///
-    /// // Create file name
-    /// let file_name = String::from("tests/netcdf/my_netcdf.nc");
-    ///
-    /// // Call endpoint
-    /// client.query_netcdf(
-    ///         &start_date, &end_date, &interval, &parameter, &bbox, &file_name, &None
-    ///     )
-    ///     .await
-    ///     .unwrap();
+    ///     // Create Parameters
+    ///     let parameter =String::from("t_2m:C");
+    /// 
+    ///     // Create Location
+    ///     let bbox = BBox {
+    ///         lat_min: 52.40,
+    ///         lat_max: 52.50,
+    ///         lon_min: 13.40,
+    ///         lon_max: 13.50,
+    ///         lat_res: 0.05,
+    ///         lon_res: 0.05
+    ///     };
+    /// 
+    ///     // Create file name
+    ///     let file_name = String::from("tests/netcdf/my_netcdf.nc");
+    /// 
+    ///     // Call endpoint
+    ///     client.query_netcdf(
+    ///             &start_date, &end_date, &interval, &parameter, &bbox, &file_name, &None
+    ///         )
+    ///         .await
+    ///         .unwrap();
+    /// }
     /// ```
     pub async fn query_netcdf(&self,
         start_date: &chrono::DateTime<chrono::Utc>,
@@ -732,38 +776,42 @@ impl APIClient {
     /// 
     /// # Examples
     /// 
-    /// ```
-    /// use chrono::prelude::*,
-    /// use crate::location::BBox;
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::BBox;
     /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     
+    ///     // Create time information
+    ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
+    ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     /// 
-    /// // Create time information
-    /// // 1989-11-09 19:00:00 --> 18:00:00 UTC
-    /// let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    ///
-    /// // Create Parameters
-    /// let parameter = String::from("t_2m:C");
-    ///
-    /// // Create Location
-    /// let bbox = BBox {
-    ///     lat_min: 45.8179716,
-    ///     lat_max: 47.8084648,
-    ///     lon_min: 5.9559113,
-    ///     lon_max: 10.4922941,
-    ///     lat_res: 0.01,
-    ///     lon_res: 0.01
-    /// };
-    ///
-    /// // Create file name
-    /// let file_name = String::from("tests/png/my_png.png");
-    ///
-    /// // Call endpoint
-    /// client.query_grid_png(
-    ///         &start_date, &parameter, &bbox, &file_name, &None
-    ///     )
-    ///     .await
-    ///     .unwrap();
+    ///     // Create Parameters
+    ///     let parameter = String::from("t_2m:C");
+    /// 
+    ///     // Create Location
+    ///     let bbox = BBox {
+    ///         lat_min: 45.8179716,
+    ///         lat_max: 47.8084648,
+    ///         lon_min: 5.9559113,
+    ///         lon_max: 10.4922941,
+    ///         lat_res: 0.01,
+    ///         lon_res: 0.01
+    ///     };
+    /// 
+    ///     // Create file name
+    ///     let file_name = String::from("tests/png/my_png.png");
+    /// 
+    ///     // Call endpoint
+    ///     client.query_grid_png(
+    ///             &start_date, &parameter, &bbox, &file_name, &None
+    ///         )
+    ///         .await
+    ///         .unwrap();
+    /// }
     /// ```
     pub async fn query_grid_png(&self,
         date: &chrono::DateTime<chrono::Utc>,
@@ -811,40 +859,44 @@ impl APIClient {
     /// 
     /// # Examples
     /// 
-    /// ```
-    /// use chrono::prelude::*,
-    /// use crate::location::BBox;
+    /// ```rust, no_run
+    /// use chrono::{Utc, Duration, TimeZone};
+    /// use rust_connector_api::APIClient;
+    /// use rust_connector_api::BBox;
     /// 
-    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
+    /// #[tokio::main] 
+    /// async fn main() {
+    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     
+    ///     // Create time information
+    ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
+    ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    ///     let end_date = start_date + Duration::days(1);
+    ///     let interval = Duration::hours(12);
     /// 
-    /// // Create time information
-    /// // 1989-11-09 19:00:00 --> 18:00:00 UTC
-    /// let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    /// let end_date = start_date + Duration::days(1);
-    /// let interval = Duration::hours(12);
-    ///
-    /// // Create Parameters
-    /// let parameter = String::from("t_2m:C");
-    ///
-    /// // Create Location
-    /// let bbox = BBox {
-    ///     lat_min: 45.8179716,
-    ///     lat_max: 47.8084648,
-    ///     lon_min: 5.9559113,
-    ///     lon_max: 10.4922941,
-    ///     lat_res: 0.01,
-    ///     lon_res: 0.01
-    /// };
-    ///
-    /// // Create file name
-    /// let prefixpath: String = String::from("tests/png_series/test_series");
-    ///
-    /// // Call endpoint
-    /// client.query_grid_png_timeseries(
-    ///         &start_date, &end_date, &interval, &parameter, &bbox, &prefixpath, &None
-    ///     )
-    ///     .await
-    ///     .unwrap();
+    ///     // Create Parameters
+    ///     let parameter = String::from("t_2m:C");
+    /// 
+    ///     // Create Location
+    ///     let bbox = BBox {
+    ///         lat_min: 45.8179716,
+    ///         lat_max: 47.8084648,
+    ///         lon_min: 5.9559113,
+    ///         lon_max: 10.4922941,
+    ///         lat_res: 0.01,
+    ///         lon_res: 0.01
+    ///     };
+    /// 
+    ///     // Create file name
+    ///     let prefixpath: String = String::from("tests/png_series/test_series");
+    /// 
+    ///     // Call endpoint
+    ///     client.query_grid_png_timeseries(
+    ///             &start_date, &end_date, &interval, &parameter, &bbox, &prefixpath, &None
+    ///         )
+    ///         .await
+    ///         .unwrap();
+    /// }
     /// ```
     pub async fn query_grid_png_timeseries(&self,
         start_date: &chrono::DateTime<chrono::Utc>,
