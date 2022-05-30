@@ -1,18 +1,15 @@
 [package]
 name = "rust-connector-api"
-version = "0.1.0"
+version = "0.2.0" # https://semver.org/
 edition = "2018"
 authors = ["Meteomatics"]
+description = "Query weather and climate data from the Meteomatics API (https://www.meteomatics.com/en/)"
 license = "MIT"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
 tokio = { version = "1", features = ["full"] }
 url = "2"
-strum = { version = "0.21", features = ["derive"] }
-strum_macros = "0.21"
 chrono = "0.4"
 thiserror = "1.0"
 polars = "0.21.1"
