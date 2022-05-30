@@ -28,6 +28,8 @@ jobs:
     - name: Build
       working-directory: meteomatics
       run: cargo build
-    - name: Run tests
+    - name: Test doc
       working-directory: meteomatics
-      run: cargo test
+      run: cargo test --doct
+    - name: Test lib
+      run: cargo test --lib
