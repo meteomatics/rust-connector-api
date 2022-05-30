@@ -2,22 +2,28 @@
 //! This module specifies two custom structures for the query methods: a ```Point``` and a ```BBox```.
 //! A ```Point``` specifies a point in geographical space using latitude and longitude coordinates (
 //! e.g. St. Gallen main station -> 47.423, 9.370).
-//! ```ignore
-//! let st_gallen: Point = Point { lat: 47.423, lon: 9.370};
+//! ```rust, no_run
+//! use rust_connector_api::Point;
+//! 
+//! let st_gallen = Point { lat: 47.423, lon: 9.370};
 //! ````
+//! 
 //! A ```BBox```specifies the bounding box in geographical space for a grid query. The box is defined
 //! on the coordinates of the upper left (latitude max value, longitue min value) and lower right points
 //! (latitude min value, longitude max value). The BBox further requires the definition of the desired
 //! output resolution of the grid (latitude resolution, longitude resolution).
-//! ```ignore
-//! let st_gallen_grid: BBox = BBox {
+//! ```rust, no_run
+//! use rust_connector_api::BBox;
+//! 
+//! let st_gallen_grid = BBox {
 //!     lat_min: 47.423,
 //!     lat_max: 47.424,
 //!     lon_min: 9.369,
 //!     lon_max: 9.370,
-//!     lat_res: 0.0005,ca
+//!     lat_res: 0.0005,
 //!     lon_res: 0.0005
-//! }
+//! };
+//! ```
 
 use std::fmt;
 
@@ -50,7 +56,6 @@ impl fmt::Display for Point {
 }
 
 /// This Display Trait implements the correct way of combining the bounding box coordinates. 
-// TODO: Think about the number of significant digits and rounding/imprecision issues.
 impl fmt::Display for BBox {
     fn fmt(&self, f:&mut fmt::Formatter) -> fmt::Result {
         write!(
