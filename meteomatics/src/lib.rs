@@ -55,7 +55,7 @@
 //! ```rust, no_run
 //! use rust_connector_api::APIClient;
 //! use rust_connector_api::Point;
-//! use chrono::{Duration, Utc, prelude::*};
+//! use chrono::{Duration, Utc, TimeZone};
 //! 
 //! #[tokio::main]
 //! async fn main(){
