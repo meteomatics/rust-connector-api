@@ -17,6 +17,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Build Essential
+      run: |
+        sudo apt-get update
+        sudo apt install build-essential
     - name: HDF5
       run: |
         sudo apt-get update
