@@ -32,4 +32,5 @@ jobs:
       working-directory: meteomatics
       run: cargo test --doc
     - name: Test lib
+      working-directory: meteomatics
       run: cargo test --lib
