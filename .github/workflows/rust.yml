@@ -30,6 +30,6 @@ jobs:
       run: cargo build
     - name: Test doc
       working-directory: meteomatics
-      run: cargo test --doct
+      run: cargo test --doc
     - name: Test lib
       run: cargo test --lib
