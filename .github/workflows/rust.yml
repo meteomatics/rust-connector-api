@@ -17,8 +17,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      working-directory: ./meteomatics
-      run: cargo build --verbose
+      working-directory: ./../meteomatics
+      run: cargo build
     - name: Run tests
-      working-directory: ./meteomatics
-      run: cargo test --verbose
+      working-directory: ./../meteomatics
+      run: cargo test
