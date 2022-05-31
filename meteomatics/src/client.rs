@@ -934,17 +934,14 @@ impl APIClient {
 mod tests {
 
     use crate::APIClient;
-    use url::Url;
     
     #[tokio::test]
     async fn client_fires_get_request() {
 
         // Query to the mockup server running at Postman
-        let query = Url::parse("https://d77cb338-a50e-4dee-9ff4-1f2bbee32166.mock.pstmn.io/")
-            .expect("Base URL is known to be valid")
-            .join("status")
-            .unwrap();
-
+        let query = crate::client::build_url(
+            &"status".to_string()
+        ).await.unwrap();
 
         // Credentials
         let api_key = "test_password".to_string();
