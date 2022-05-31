@@ -934,19 +934,21 @@ impl APIClient {
 mod tests {
 
     use crate::APIClient;
-    use dotenv::dotenv;
-    use std::env;
+    use url::Url;
     
     #[tokio::test]
     async fn client_fires_get_request() {
-        let query = crate::client::build_url(
-            &String::from("2022-05-17T12:00:00.000Z/t_2m:C/51.5073219,-0.1276474/csv")
-        ).await.unwrap();
+
+        // Query to the mockup server running at Postman
+        let query = Url::parse("https://d77cb338-a50e-4dee-9ff4-1f2bbee32166.mock.pstmn.io/")
+            .expect("Base URL is known to be valid")
+            .join("status")
+            .unwrap();
+
 
         // Credentials
-        dotenv().ok();
-        let api_key: String = env::var("METEOMATICS_PW").unwrap();
-        let api_user: String = env::var("METEOMATICS_USER").unwrap();
+        let api_key = "test_password".to_string();
+        let api_user = "test_user".to_string();
         let api_client = APIClient::new(
             api_user,
             api_key,
