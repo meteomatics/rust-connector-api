@@ -1,7 +1,7 @@
 [package]
 name = "rust-connector-api"
 version = "0.2.0" # https://semver.org/
-edition = "2018"
+edition = "2021"
 authors = ["Meteomatics"]
 description = "Query weather and climate data from the Meteomatics API (https://www.meteomatics.com/en/)"
 license = "MIT"
