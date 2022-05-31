@@ -61,12 +61,12 @@ impl fmt::Display for BBox {
         write!(
             f, 
             "{},{}_{},{}:{},{}", 
-            &self.lat_max.to_string(), 
-            &self.lon_min.to_string(), 
-            &self.lat_min.to_string(), 
-            &self.lon_max.to_string(),
-            &self.lat_res.to_string(),
-            &self.lon_res.to_string()
+            &self.lat_max, 
+            &self.lon_min, 
+            &self.lat_min, 
+            &self.lon_max,
+            &self.lat_res,
+            &self.lon_res
         )
     }
 }

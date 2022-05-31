@@ -2,7 +2,7 @@ use rust_connector_api::APIClient;
 use chrono::{Duration, Utc, prelude::*};
 use dotenv::dotenv;
 use std::env;
-use rust_connector_api::{Point, BBox};
+use rust_connector_api::{Point, BBox, TimeSeries};
 use polars::prelude::*;
 use std::io::Cursor;
 use std::fs;
@@ -41,10 +41,13 @@ async fn call_query_time_series_with_options() {
         10,
     );
 
-    // Create time information
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let mut parameters = Vec::new();
@@ -64,7 +67,7 @@ async fn call_query_time_series_with_options() {
     // Call endpoint
     let df_q = meteomatics_connector
         .query_time_series(
-            &start_date, &end_date, &interval, &parameters, &coords, &Option::from(optionals)
+            &time_series, &parameters, &coords, &Option::from(optionals)
         )
         .await.unwrap();
 
@@ -105,10 +108,13 @@ async fn call_query_time_series_without_options() {
         10,
     );
 
-    // Create time information
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let mut parameters = Vec::new();
@@ -122,7 +128,7 @@ async fn call_query_time_series_without_options() {
 
     // Call endpoint
     let df_q = meteomatics_connector
-        .query_time_series(&start_date, &end_date, &interval, &parameters, &coords, &None)
+        .query_time_series(&time_series, &parameters, &coords, &None)
         .await.unwrap();
 
     println!("Rust result: {:?}", df_q);
@@ -159,10 +165,13 @@ async fn query_time_series_one_point_one_param() {
         10,
     );
 
-    // Create time information
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C")];
@@ -173,7 +182,7 @@ async fn query_time_series_one_point_one_param() {
 
     // Call endpoint
     let df_q = meteomatics_connector
-        .query_time_series(&start_date, &end_date, &interval, &parameters, &coords, &None)
+        .query_time_series(&time_series, &parameters, &coords, &None)
         .await
         .unwrap();
     println!("Rust result: {:?}", df_q);
@@ -210,10 +219,13 @@ async fn query_time_series_one_point_two_param() {
         10,
     );
 
-    // Create time information
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
@@ -224,7 +236,7 @@ async fn query_time_series_one_point_two_param() {
 
     // Call endpoint
     let df_q = meteomatics_connector
-        .query_time_series(&start_date, &end_date, &interval, &parameters, &coords, &None)
+        .query_time_series(&time_series, &parameters, &coords, &None)
         .await
         .unwrap();
     println!("Rust result: {:?}", df_q);
@@ -264,10 +276,13 @@ async fn query_time_series_two_point_two_param() {
         10,
     );
 
-    // Create time information
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
@@ -279,7 +294,7 @@ async fn query_time_series_two_point_two_param() {
 
     // Call endpoint
     let df_q = meteomatics_connector
-        .query_time_series(&start_date, &end_date, &interval, &parameters, &coords, &None)
+        .query_time_series(&time_series, &parameters, &coords, &None)
         .await
         .unwrap();
     println!("Rust result: {:?}", df_q);
@@ -316,10 +331,13 @@ async fn query_time_series_one_postal_one_param() {
         10,
     );
 
-    // Create time information
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C")];
@@ -329,7 +347,7 @@ async fn query_time_series_one_postal_one_param() {
 
     // Call endpoint
     let df_q = meteomatics_connector
-        .query_time_series_postal(&start_date, &end_date, &interval, &parameters, &postal1, &None)
+        .query_time_series_postal(&time_series, &parameters, &postal1, &None)
         .await
         .unwrap();
     println!("Rust result: {:?}", df_q);
@@ -369,10 +387,13 @@ async fn query_time_series_two_postal_two_param() {
         10,
     );
 
-    // Create time information
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
@@ -382,7 +403,7 @@ async fn query_time_series_two_postal_two_param() {
 
     // Call endpoint
     let df_q = meteomatics_connector
-        .query_time_series_postal(&start_date, &end_date, &interval, &parameters, &postal1, &None)
+        .query_time_series_postal(&time_series, &parameters, &postal1, &None)
         .await
         .unwrap();
     println!("Rust result: {:?}", df_q);
@@ -563,11 +584,13 @@ async fn query_grid_unpivoted_time_series() {
         10,
     );
 
-    // Create time information
-    // 1989-11-09 19:00:00 --> 18:00:00 UTC
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
@@ -585,7 +608,7 @@ async fn query_grid_unpivoted_time_series() {
     // Call endpoint
     let df_q = meteomatics_connector
         .query_grid_unpivoted_time_series(
-            &start_date, &end_date, &interval, &parameters, &bbox, &None
+            &time_series, &parameters, &bbox, &None
         )
         .await
         .unwrap();
@@ -609,11 +632,13 @@ async fn query_netcdf() {
         10,
     );
 
-    // Create time information
-    // 1989-11-09 19:00:00 --> 18:00:00 UTC
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let parameter =String::from("t_2m:C");
@@ -634,7 +659,7 @@ async fn query_netcdf() {
     // Call endpoint
     meteomatics_connector
         .query_netcdf(
-            &start_date, &end_date, &interval, &parameter, &bbox, &file_name, &None
+            &time_series, &parameter, &bbox, &file_name, &None
         )
         .await
         .unwrap();
@@ -736,11 +761,13 @@ async fn query_grid_png_timeseries() {
         10,
     );
 
-    // Create time information
-    // 1989-11-09 19:00:00 --> 18:00:00 UTC
-    let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(12);
+    // Create time series
+    let time_series_start = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    let time_series = TimeSeries{ 
+        start: time_series_start, 
+        end: time_series_start + Duration::days(1), 
+        timedelta: Option::from(Duration::hours(12)) 
+    };
 
     // Create Parameters
     let parameter = String::from("t_2m:C");
@@ -761,14 +788,14 @@ async fn query_grid_png_timeseries() {
     // Call endpoint
     meteomatics_connector
         .query_grid_png_timeseries(
-            &start_date, &end_date, &interval, &parameter, &bbox, &prefixpath, &None
+            &time_series, &parameter, &bbox, &prefixpath, &None
         )
         .await
         .unwrap();
     
     // Open a single PNG
     let fmt = "%Y%m%d_%H%M%S";
-    let file_name = format!("{}_{}.png", prefixpath, start_date.format(fmt));
+    let file_name = format!("{}_{}.png", prefixpath, time_series.start.format(fmt));
     let decoder = png::Decoder::new(fs::File::open(&file_name).unwrap());
     let reader = decoder.read_info().unwrap();
 
@@ -821,7 +848,11 @@ async fn query_lightning(){
 
     // Create time information
     let start_date = Utc.ymd(2022, 5, 20).and_hms_micro(10, 0, 0, 0);
-    let end_date = start_date + Duration::days(1);
+    let time_series = TimeSeries {
+        start: start_date,
+        end: start_date + Duration::days(1),
+        timedelta: None
+    };
 
     // Create Location
     let bbox: BBox = BBox {
@@ -833,9 +864,7 @@ async fn query_lightning(){
         lon_res: 0.0
     };
 
-    let df = meteomatics_connector.query_lightning(
-        &start_date, &end_date, &bbox
-    ).await.unwrap();
+    let df = meteomatics_connector.query_lightning(&time_series, &bbox).await.unwrap();
 
     println!("{:?}", df);
 }

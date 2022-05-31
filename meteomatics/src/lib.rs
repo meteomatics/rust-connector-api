@@ -53,8 +53,7 @@
 //! available parameters can be found here <https://www.meteomatics.com/en/api/available-parameters/alphabetic-list/>.
 //!
 //! ```rust, no_run
-//! use rust_connector_api::APIClient;
-//! use rust_connector_api::Point;
+//! use rust_connector_api::{APIClient, Point, TimeSeries};
 //! use chrono::{Duration, Utc, TimeZone};
 //! 
 //! #[tokio::main]
@@ -72,8 +71,11 @@
 //! 
 //!     // Time series specification
 //!     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-//!     let end_date = start_date + Duration::days(1);
-//!     let interval = Duration::hours(12);
+//!     let time_series = TimeSeries {
+//!         start: start_date,
+//!         end: start_date + Duration::days(1),
+//!         timedelta: Option::from(Duration::hours(12))
+//!     };
 //!
 //!     // Parameter selection
 //!     let param = vec![String::from("t_2m:C")];
@@ -83,7 +85,7 @@
 //!
 //!     // Use API 
 //!     let df = client
-//!         .query_time_series(&start_date, &end_date, &interval, &param, &coords, &None)
+//!         .query_time_series(&time_series, &param, &coords, &None)
 //!         .await
 //!         .unwrap();
 //! 
@@ -111,5 +113,6 @@ pub mod util;
 pub use client::APIClient;
 pub use location::Point;
 pub use location::BBox;
+pub use util::TimeSeries;
 pub use chrono::{Duration, DateTime, Local, Utc};
 pub use polars::frame::DataFrame;

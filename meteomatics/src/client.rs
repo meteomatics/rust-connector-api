@@ -103,8 +103,7 @@ impl APIClient {
     ///
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::Point;
+    /// use rust_connector_api::{APIClient, Point};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -174,8 +173,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::BBox;
+    /// use rust_connector_api::{APIClient, BBox, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -183,7 +181,11 @@ impl APIClient {
     ///     
     ///     // Create time information
     ///     let start_date = Utc.ymd(2022, 5, 20).and_hms_micro(10, 0, 0, 0);
-    ///     let end_date = start_date + Duration::days(1);
+    ///     let time_series = TimeSeries {
+    ///         start: start_date,
+    ///         end: start_date + Duration::days(1),
+    ///         timedelta: None
+    ///     };
     ///     
     ///     // Create Location
     ///     let bbox: BBox = BBox {
@@ -195,26 +197,25 @@ impl APIClient {
     ///         lon_res: 0.0
     ///     };
     ///     
-    ///     let df_lightning = client.query_lightning(&start_date, &end_date, &bbox).await.unwrap();
+    ///     let df_lightning = client.query_lightning(&time_series, &bbox).await.unwrap();
     /// }
     /// ```
     pub async fn query_lightning(
         &self,
-        start_date: &chrono::DateTime<chrono::Utc>,
-        end_date: &chrono::DateTime<chrono::Utc>,
+        time_series: &TimeSeries,
         bbox: &BBox
     ) -> std::result::Result<polars::frame::DataFrame, ConnectorError> {
         // Create the bounding box string according to API specification.
         let coords_str = format!(
             "{},{}_{},{}", 
-            bbox.lat_max.to_string(),
-            bbox.lon_min.to_string(),
-            bbox.lat_min.to_string(),
-            bbox.lon_max.to_string()
+            bbox.lat_max,
+            bbox.lon_min,
+            bbox.lat_min,
+            bbox.lon_max
         );
 
         // Create the query for lightning
-        let query_specs = build_grid_ts_lightning_query_specs(start_date, end_date, &coords_str).await;
+        let query_specs = build_grid_ts_lightning_query_specs(time_series, &coords_str).await;
 
         // Create the full URL
         let full_url = build_url(&query_specs).await.map_err(|_| ConnectorError::ParseError)?;
@@ -282,8 +283,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::Point;
+    /// use rust_connector_api::{APIClient, Point, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -291,8 +291,11 @@ impl APIClient {
     ///     
     ///     // Create time information
     ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    ///     let end_date = start_date + Duration::days(1);
-    ///     let interval = Duration::hours(12);
+    ///     let time_series = TimeSeries {
+    ///         start: start_date,
+    ///         end: start_date + Duration::days(1),
+    ///         timedelta: Option::from(Duration::hours(12))
+    ///     };
     /// 
     ///     // Create Parameters
     ///     let parameters = vec![String::from("t_2m:C")];
@@ -303,16 +306,14 @@ impl APIClient {
     /// 
     ///     // Get query result 
     ///     let df_point_ts = client
-    ///         .query_time_series(&start_date, &end_date, &interval, &parameters, &coords, &None)
+    ///         .query_time_series(&time_series, &parameters, &coords, &None)
     ///         .await
     ///         .unwrap();
     /// }
     /// ```
     pub async fn query_time_series(
         &self,
-        start_date: &chrono::DateTime<chrono::Utc>,
-        end_date: &chrono::DateTime<chrono::Utc>,
-        interval: &chrono::Duration,
+        time_series: &TimeSeries,
         parameters: &[String],
         coordinates: &[Point],
         optionals: &Option<Vec<String>>,
@@ -328,7 +329,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
-            start_date, end_date, interval, parameters, &coords_str, optionals, &String::from("csv")
+            time_series, parameters, &coords_str, optionals, &String::from("csv")
         ).await;
 
         // Create the complete URL
@@ -369,8 +370,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::Point;
+    /// use rust_connector_api::{APIClient, Point, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -378,8 +378,11 @@ impl APIClient {
     ///     
     ///     // Create time information
     ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    ///     let end_date = start_date + Duration::days(1);
-    ///     let interval = Duration::hours(12);
+    ///     let time_series = TimeSeries {
+    ///         start: start_date,
+    ///         end: start_date + Duration::days(1),
+    ///         timedelta: Option::from(Duration::hours(12))
+    ///     };
     /// 
     ///     // Create Parameters
     ///     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
@@ -389,15 +392,13 @@ impl APIClient {
     /// 
     ///     // Call endpoint
     ///     let df_ts_postal = client
-    ///         .query_time_series_postal(&start_date, &end_date, &interval, &parameters, &postal1, &None)
+    ///         .query_time_series_postal(&time_series, &parameters, &postal1, &None)
     ///         .await
     ///         .unwrap();
     /// }
     /// ```
     pub async fn query_time_series_postal(&self,
-        start_date: &chrono::DateTime<chrono::Utc>,
-        end_date: &chrono::DateTime<chrono::Utc>,
-        interval: &chrono::Duration,
+        time_series: &TimeSeries,
         parameters: &[String],
         postals: &[String],
         optionals: &Option<Vec<String>>,
@@ -413,7 +414,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
-            start_date, end_date, interval, parameters, &coords_str, optionals, &String::from("csv")
+            time_series, parameters, &coords_str, optionals, &String::from("csv")
         ).await;
 
         // Create the complete URL
@@ -454,8 +455,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::BBox;
+    /// use rust_connector_api::{APIClient, BBox};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -530,8 +530,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::BBox;
+    /// use rust_connector_api::{APIClient, BBox};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -609,8 +608,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::BBox;
+    /// use rust_connector_api::{APIClient, BBox, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -619,8 +617,11 @@ impl APIClient {
     ///     // Create time information
     ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
     ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    ///     let end_date = start_date + Duration::days(1);
-    ///     let interval = Duration::hours(12);
+    ///     let time_series = TimeSeries {
+    ///         start: start_date,
+    ///         end: start_date + Duration::days(1),
+    ///         timedelta: Option::from(Duration::hours(12))
+    ///     };
     /// 
     ///     // Create Parameters
     ///     let parameters = vec![String::from("t_2m:C"), String::from("precip_1h:mm")];
@@ -637,17 +638,13 @@ impl APIClient {
     /// 
     ///     // Call endpoint
     ///     let df_grid_unpiv_ts = client
-    ///         .query_grid_unpivoted_time_series(
-    ///             &start_date, &end_date, &interval, &parameters, &bbox, &None
-    ///         )
+    ///         .query_grid_unpivoted_time_series(&time_series, &parameters, &bbox, &None)
     ///         .await
     ///         .unwrap();
     /// }
     /// ```
     pub async fn query_grid_unpivoted_time_series(&self,
-        start_date: &chrono::DateTime<chrono::Utc>,
-        end_date: &chrono::DateTime<chrono::Utc>,
-        interval: &chrono::Duration,
+        time_series: &TimeSeries,
         parameters: &[String],
         bbox: &BBox,
         optionals: &Option<Vec<String>>
@@ -657,7 +654,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
-            start_date, end_date, interval, parameters, &coords_str, optionals, &String::from("csv")
+            time_series, parameters, &coords_str, optionals, &String::from("csv")
         ).await;
 
         // Create the complete URL
@@ -691,8 +688,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::BBox;
+    /// use rust_connector_api::{APIClient, BBox, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -701,8 +697,11 @@ impl APIClient {
     ///     // Create time information
     ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
     ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    ///     let end_date = start_date + Duration::days(1);
-    ///     let interval = Duration::hours(12);
+    ///     let time_series = TimeSeries {
+    ///         start: start_date,
+    ///         end: start_date + Duration::days(1),
+    ///         timedelta: Option::from(Duration::hours(12))
+    ///     };
     /// 
     ///     // Create Parameters
     ///     let parameter =String::from("t_2m:C");
@@ -721,17 +720,13 @@ impl APIClient {
     ///     let file_name = String::from("tests/netcdf/my_netcdf.nc");
     /// 
     ///     // Call endpoint
-    ///     client.query_netcdf(
-    ///             &start_date, &end_date, &interval, &parameter, &bbox, &file_name, &None
-    ///         )
+    ///     client.query_netcdf(&time_series, &parameter, &bbox, &file_name, &None)
     ///         .await
     ///         .unwrap();
     /// }
     /// ```
     pub async fn query_netcdf(&self,
-        start_date: &chrono::DateTime<chrono::Utc>,
-        end_date: &chrono::DateTime<chrono::Utc>,
-        interval: &chrono::Duration,
+        time_series: &TimeSeries,
         parameter: &String,
         bbox: &BBox,
         file_name: &String,
@@ -745,7 +740,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_grid_ts_query_specs(
-            start_date, end_date, interval, parameter, &coords_str, "netcdf", optionals
+            time_series, parameter, &coords_str, "netcdf", optionals
         ).await;
 
         // Create the complete URL
@@ -778,8 +773,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::BBox;
+    /// use rust_connector_api::{APIClient, BBox};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -806,9 +800,7 @@ impl APIClient {
     ///     let file_name = String::from("tests/png/my_png.png");
     /// 
     ///     // Call endpoint
-    ///     client.query_grid_png(
-    ///             &start_date, &parameter, &bbox, &file_name, &None
-    ///         )
+    ///     client.query_grid_png(&start_date, &parameter, &bbox, &file_name, &None)
     ///         .await
     ///         .unwrap();
     /// }
@@ -861,8 +853,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::APIClient;
-    /// use rust_connector_api::BBox;
+    /// use rust_connector_api::{APIClient, BBox, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -871,8 +862,11 @@ impl APIClient {
     ///     // Create time information
     ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
     ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
-    ///     let end_date = start_date + Duration::days(1);
-    ///     let interval = Duration::hours(12);
+    ///     let time_series = TimeSeries {
+    ///         start: start_date,
+    ///         end: start_date + Duration::days(1),
+    ///         timedelta: Option::from(Duration::hours(12))
+    ///     };
     /// 
     ///     // Create Parameters
     ///     let parameter = String::from("t_2m:C");
@@ -891,17 +885,13 @@ impl APIClient {
     ///     let prefixpath: String = String::from("tests/png_series/test_series");
     /// 
     ///     // Call endpoint
-    ///     client.query_grid_png_timeseries(
-    ///             &start_date, &end_date, &interval, &parameter, &bbox, &prefixpath, &None
-    ///         )
+    ///     client.query_grid_png_timeseries(&time_series, &parameter, &bbox, &prefixpath, &None)
     ///         .await
     ///         .unwrap();
     /// }
     /// ```
     pub async fn query_grid_png_timeseries(&self,
-        start_date: &chrono::DateTime<chrono::Utc>,
-        end_date: &chrono::DateTime<chrono::Utc>,
-        interval: &chrono::Duration,
+        time_series: &TimeSeries,
         parameter: &String,
         bbox: &BBox,
         prefixpath: &String,
@@ -909,12 +899,12 @@ impl APIClient {
     ) -> Result<(), ConnectorError> {
 
         // Iterate the time series
-        let mut dt_cur = start_date.clone();
+        let mut dt_cur = time_series.start;
         let fmt = "%Y%m%d_%H%M%S";
-        while dt_cur <= end_date.clone() {
+        while dt_cur <= time_series.end {
             let cur_file_name = format!("{}_{}.png", prefixpath, dt_cur.format(fmt));
             self.query_grid_png(&dt_cur, parameter, bbox, &cur_file_name, optionals).await?;
-            dt_cur = dt_cur + interval.clone();
+            dt_cur = dt_cur + time_series.timedelta.unwrap(); // panic when timedelta absent
         };
         Ok(())
     }

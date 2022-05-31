@@ -15,9 +15,46 @@ use std::path::Path;
 use std::fs;
 use polars::prelude::*;
 use crate::location::Point;
+use std::fmt;
 
 // Default API URL
 const BASE_URL: &str = "https://api.meteomatics.com";
+
+/// Container for time series information. This allows functions to use less parameters. The parameter
+/// [`TimeSeries.timedelta`] is optional. 
+/// 
+/// # Examples
+/// 
+/// ```rust, no_run
+/// use rust_connector_api::TimeSeries;
+/// use chrono::{DateTime, Duration, Utc, TimeZone};
+/// let dt_start = Utc::now();
+/// let time_series = TimeSeries {
+///     start: dt_start,
+///     end: dt_start + Duration::days(1),
+///     timedelta: Option::from(Duration::hours(3))
+/// };
+/// 
+/// println!("Time series: {}", time_series);
+/// ```
+#[derive(Debug)]
+pub struct TimeSeries{
+    pub start: chrono::DateTime<chrono::Utc>,
+    pub end: chrono::DateTime<chrono::Utc>,
+    pub timedelta: Option<chrono::Duration>
+}
+
+impl fmt::Display for TimeSeries {
+    fn fmt(&self, f:&mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f, 
+            "{}--{}:{}", 
+            &self.start.to_rfc3339(),
+            &self.end.to_rfc3339(),
+            &self.timedelta.unwrap()
+        )
+    }
+}
 
 /// Top-level struct for the De-serialization of the query results for <https://api.meteomatics.com/user_stats_json>.
 /// This query gives an overview about the request activity of your account as well as information about
@@ -107,13 +144,8 @@ std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
     // https://docs.rs/polars/latest/polars/frame/struct.DataFrame.html#method.shape
     // Get (height, width) of the DataFrame. Get width:
     let n = df_in.height();
-    // TODO: Convert to simplified version see postal code
-    let mut lat: Vec<f64> = Vec::new();
-    let mut lon: Vec<f64> = Vec::new();
-    for _ in 0..n {
-        lat.push(point.lat);
-        lon.push(point.lon);
-    }
+    let lat = vec![point.lat; n];
+    let lon = vec![point.lon; n];
     // https://docs.rs/polars/latest/polars/frame/struct.DataFrame.html#method.extend
     // https://docs.rs/polars/latest/polars/frame/struct.DataFrame.html#method.get_column_names
     let df_tmp = df!("lat" => &lat, "lon" => &lon)?;
@@ -144,10 +176,9 @@ pub async fn parse_response_to_df(
     let body = response.text().await.unwrap();
 
     // Parse the response to a DataFrame
-    // TODO: rename variable
     let file = std::io::Cursor::new(&body);
     use polars::prelude::*; 
-    let df1 = polars::io::csv::CsvReader::new(file)
+    let dataframe = polars::io::csv::CsvReader::new(file)
         .infer_schema(Some(100))
         .with_delimiter(b';')
         .has_header(true)
@@ -155,7 +186,7 @@ pub async fn parse_response_to_df(
         .with_ignore_parser_errors(false)
         .finish()?;
 
-    Ok(df1)
+    Ok(dataframe)
 }
 
 // Converts the HTTP response into a polars DataFrame.
@@ -166,10 +197,9 @@ pub async fn parse_grid_response_to_df(
         let body = response.text().await.unwrap();
 
         // Parse the response to a DataFrame
-        // TODO: Rename variable
         let file = std::io::Cursor::new(&body);
         use polars::prelude::*; 
-        let df1 = polars::io::csv::CsvReader::new(file)
+        let dataframe = polars::io::csv::CsvReader::new(file)
             .infer_schema(Some(100))
             .with_delimiter(b';')
             .has_header(true)
@@ -178,7 +208,7 @@ pub async fn parse_grid_response_to_df(
             .with_ignore_parser_errors(false)
             .finish()?;
     
-        Ok(df1)
+        Ok(dataframe)
 }
 
 /// Builds the query specifications ('specs') for a time series query according to the Meteomatics API
@@ -186,9 +216,7 @@ pub async fn parse_grid_response_to_df(
 /// dates are formatted according to ISO8601 (<https://en.wikipedia.org/wiki/ISO_8601>). The format
 /// parameter specifies the requested file type (e.g. "csv" or "netcdf" or "png").
 pub async fn build_ts_query_specs(
-    start_date: &chrono::DateTime<chrono::Utc>,
-    end_date: &chrono::DateTime<chrono::Utc>,
-    interval: &chrono::Duration,
+    time_series: &TimeSeries,
     parameters: &[String],
     coords_str: &str,
     optionals: &Option<Vec<String>>,
@@ -196,10 +224,8 @@ pub async fn build_ts_query_specs(
 ) -> String {
 
     let query_specs = format!(
-        "{}--{}:{}/{}/{}/{}",
-        start_date.to_rfc3339(),
-        end_date.to_rfc3339(),
-        interval,
+        "{}/{}/{}/{}",
+        time_series,
         parameters.join(","),
         coords_str,
         format
@@ -259,19 +285,15 @@ pub async fn build_grid_query_specs(
 /// dates are formatted according to ISO8601 (<https://en.wikipedia.org/wiki/ISO_8601>). The format
 /// parameter specifies the requested file type (e.g. "csv" or "netcdf" or "png").
 pub async fn build_grid_ts_query_specs(
-    start_date: &chrono::DateTime<chrono::Utc>,
-    end_date: &chrono::DateTime<chrono::Utc>,
-    interval: &chrono::Duration,
+    time_series: &TimeSeries,
     parameter: &String,
     coords_str: &str,
     format: &str,
     optionals: &Option<Vec<String>>,
 ) -> String {
     let query_specs = format!(
-        "{}--{}:{}/{}/{}/{}",
-        start_date.to_rfc3339(),
-        end_date.to_rfc3339(),
-        interval,
+        "{}/{}/{}/{}",
+        time_series,
         parameter,
         coords_str,
         format,
@@ -295,14 +317,13 @@ pub async fn build_grid_ts_query_specs(
 /// This query is used to get information about lightning in a defined area and over a certain amount
 /// of time (defined by ```start_date``` and ```end_date```).
 pub async fn build_grid_ts_lightning_query_specs(
-    start_date: &chrono::DateTime<chrono::Utc>,
-    end_date: &chrono::DateTime<chrono::Utc>,
+    time_series: &TimeSeries,
     coords_str: &str
 ) -> String {
     let query_specs = format!(
         "get_lightning_list?time_range={}--{}&bounding_box={}&format=csv",
-        start_date.to_rfc3339(),
-        end_date.to_rfc3339(),
+        time_series.start.to_rfc3339(),
+        time_series.end.to_rfc3339(),
         coords_str
     );
     query_specs 
@@ -344,7 +365,7 @@ mod tests {
     use std::path::Path;
     use std::fs;
     use serde_json;
-    use crate::util::UStatsResponse;
+    use crate::util::{UStatsResponse, TimeSeries};
 
 
     #[tokio::test]
@@ -372,8 +393,11 @@ mod tests {
     async fn check_ts_query_specs_string() {
         // seconds
         let start_date = Utc.ymd(2022, 5, 17).and_hms(12, 00, 00);
-        let end_date = start_date + Duration::days(1);
-        let interval = Duration::hours(1);
+        let time_series = TimeSeries{
+            start: start_date,
+            end: start_date + Duration::days(1),
+            timedelta: Option::from(Duration::hours(1))
+        };
 
         let parameters: Vec<String> = vec![String::from("t_2m:C")];
         let p1: Point = Point { lat: 52.520551, lon: 13.461804};
@@ -381,7 +405,7 @@ mod tests {
         let coord_str = crate::util::points_to_str(&coords).await;
 
         let query_s = crate::util::build_ts_query_specs(
-            &start_date, &end_date, &interval, &parameters, &coord_str, &None, &String::from("csv")
+            &time_series, &parameters, &coord_str, &None, &String::from("csv")
         ).await;
         assert_eq!(
             "2022-05-17T12:00:00+00:00--2022-05-18T12:00:00+00:00:PT3600S/t_2m:C/52.520551,13.461804/csv", 
@@ -390,11 +414,14 @@ mod tests {
         
         // microseconds
         let start_date = Utc.ymd(2022, 5, 17).and_hms_micro(12, 00, 00, 453_829);
-        let end_date = start_date + Duration::days(1);
-        let interval = Duration::hours(1);
+        let time_series = TimeSeries{
+            start: start_date,
+            end: start_date + Duration::days(1),
+            timedelta: Option::from(Duration::hours(1))
+        };
 
         let query_ms = crate::util::build_ts_query_specs(
-            &start_date, &end_date, &interval, &parameters, &coord_str, &None, &String::from("csv")
+            &time_series, &parameters, &coord_str, &None, &String::from("csv")
         ).await;
         assert_eq!(
             "2022-05-17T12:00:00.453829+00:00--2022-05-18T12:00:00.453829+00:00:PT3600S/t_2m:C/52.520551,13.461804/csv", 
@@ -403,11 +430,14 @@ mod tests {
 
         // nanoseconds
         let start_date = Utc.ymd(2022, 5, 17).and_hms_nano(12, 00, 00, 453_829_123);
-        let end_date = start_date + Duration::days(1);
-        let interval = Duration::hours(1);
+        let time_series = TimeSeries{
+            start: start_date,
+            end: start_date + Duration::days(1),
+            timedelta: Option::from(Duration::hours(1))
+        };
 
         let query_ns = crate::util::build_ts_query_specs(
-            &start_date, &end_date, &interval, &parameters, &coord_str, &None, &String::from("csv")
+            &time_series, &parameters, &coord_str, &None, &String::from("csv")
         ).await;
         assert_eq!(
             "2022-05-17T12:00:00.453829123+00:00--2022-05-18T12:00:00.453829123+00:00:PT3600S/t_2m:C/52.520551,13.461804/csv", 
