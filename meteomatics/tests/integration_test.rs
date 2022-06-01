@@ -36,8 +36,8 @@ async fn call_query_time_series_with_options() {
 
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -103,8 +103,8 @@ async fn call_query_time_series_without_options() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -160,8 +160,8 @@ async fn query_time_series_one_point_one_param() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -214,8 +214,8 @@ async fn query_time_series_one_point_two_param() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -271,8 +271,8 @@ async fn query_time_series_two_point_two_param() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -326,8 +326,8 @@ async fn query_time_series_one_postal_one_param() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -382,8 +382,8 @@ async fn query_time_series_two_postal_two_param() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -435,8 +435,8 @@ async fn query_grid_pivoted() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -498,8 +498,8 @@ async fn query_grid_unpivoted() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -579,8 +579,8 @@ async fn query_grid_unpivoted_time_series() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -627,8 +627,8 @@ async fn query_netcdf() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -697,8 +697,8 @@ async fn query_png() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -756,8 +756,8 @@ async fn query_grid_png_timeseries() {
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -822,8 +822,8 @@ async fn query_user_features(){
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -841,8 +841,8 @@ async fn query_lightning(){
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -895,8 +895,8 @@ async fn query_route_points(){
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
@@ -950,8 +950,8 @@ async fn query_route_postal(){
     
     // Create API connector
     let meteomatics_connector = APIClient::new(
-        api_user,
-        api_key,
+        &api_user,
+        &api_key,
         10,
     );
 
