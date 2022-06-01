@@ -18,14 +18,20 @@ pub struct APIClient {
 impl APIClient {
     /// Creates a new instance of the APIClient
     /// 
+    /// # Arguments
+    ///
+    /// * `username` - Provide your username for the Meteomatics API account.
+    /// * `password` - Provide your password for the Meteomatics API account.
+    /// * `timeout_seconds` - Specifies the request timeout (for [`reqwest::Client`] in seconds). 
+    /// 
     /// # Examples
     ///
     /// ```rust, no_run
     /// use rust_connector_api::APIClient;
     /// // New client with username, password and 10 second request timeout.
-    /// let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     /// ```
-    pub fn new(username: String, password: String, timeout_seconds: u64) -> Self {
+    pub fn new(username: &str, password: &str, timeout_seconds: u64) -> Self {
         // safe to use unwrap, since we want to panic if the client builder fails.
         let http_client = Client::builder()
             .timeout(std::time::Duration::from_secs(timeout_seconds))
@@ -33,13 +39,19 @@ impl APIClient {
             .unwrap();
 
         Self {
-            http_client,
-            username,
-            password,
+            http_client: http_client,
+            username: username.to_string(),
+            password: password.to_string(),
         }
     }
 
     /// Route query using postal codes.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `dates` - These dates specify the points in time for the respective locations. 
+    /// * `pcodes` - Specify locations based on their zip code (postal code e.g. "postal_CH9000").
+    /// * `params` - Names of individual parameters (e.g. "t_2m:C" or "wind_speed_10m:ms").
     ///  
     /// # Examples
     ///
@@ -49,7 +61,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     let dates = vec![Utc::now(), Utc::now(), Utc::now()];
     ///     let pcodes = vec!["postal_CH8000".to_string(), "postal_CH9000".to_string()];
     ///     let params = vec!["t_2m:C".to_string(), "precip_1h:mm".to_string()];
@@ -99,6 +111,13 @@ impl APIClient {
     }
 
     /// Route query using points. 
+    /// 
+    /// # Arguments
+    /// 
+    /// * `dates` - These dates specify the points in time for the respective locations.
+    /// * `points` - Specify locations based on latitude and longitude (see [`crate::location::Point`]).
+    /// * `params` - Names of individual parameters (e.g. "t_2m:C" or "wind_speed_10m:ms").
+    /// 
     /// # Examples
     ///
     /// ```rust, no_run
@@ -107,7 +126,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     /// 
     ///     // Create time information
     ///     let date1 = Utc.ymd(2021, 5, 25).and_hms_micro(12, 0, 0, 0);
@@ -169,6 +188,11 @@ impl APIClient {
 
     /// Query lightning in a grid
     /// 
+    /// # Arguments
+    /// 
+    /// * `time_series` - Defines the temporal extent (start and end date, timedelta = None). 
+    /// * `bbox` - Bounding box and resolution for the grid. (["crate::location::BBox"])
+    /// 
     /// # Examples
     /// 
     /// ```rust, no_run
@@ -177,7 +201,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     
     ///     // Create time information
     ///     let start_date = Utc.ymd(2022, 5, 20).and_hms_micro(10, 0, 0, 0);
@@ -252,7 +276,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     let ustats = client.query_user_features().await.unwrap();
     ///     println!("user: {}, total requests: {}", ustats.stats.username, ustats.stats.total.used);
     /// }
@@ -279,6 +303,13 @@ impl APIClient {
 
     /// Download a ```polars``` DataFrame from the API for one or more ```Point``` locations.
     /// 
+    /// # Arguments
+    /// 
+    /// * `time_series` - Defines the temporal extent (time and date of start and a timedelta).
+    /// * `parameters` - Names of individual parameters (e.g. "t_2m:C" or "wind_speed_10m:ms").
+    /// * `coordinates` - Individual point locations.
+    /// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
+    /// 
     /// # Examples
     /// 
     /// ```rust, no_run
@@ -287,7 +318,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     
     ///     // Create time information
     ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
@@ -319,7 +350,7 @@ impl APIClient {
         optionals: &Option<Vec<String>>,
     ) -> Result<polars::frame::DataFrame, ConnectorError> {
         // Check if there is only a single Point in the coordinates. This is important because in this
-        // case the HTTP CSV response does not contain the information about the location (-.-). To 
+        // case the HTTP "csv" response does not contain the information about the location (-.-). To 
         // produce a consistent DataFrame we need to create a lat and lon column (as does the python
         // connector).
         let needs_latlon: bool = coordinates.len() == 1;
@@ -329,7 +360,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
-            time_series, parameters, &coords_str, optionals, &String::from("csv")
+            time_series, parameters, &coords_str, optionals, "csv"
         ).await;
 
         // Create the complete URL
@@ -366,6 +397,13 @@ impl APIClient {
     /// Download a ```polars``` DataFrame from the API for one or more postal code location identifiers
     /// (e.g. postal_CH8000, postal_CH9000).
     /// 
+    /// # Arguments
+    /// 
+    /// * `time_series` - Defines the temporal extent (time and date of start and a timedelta).
+    /// * `parameters` - Names of individual parameters (e.g. "t_2m:C" or "wind_speed_10m:ms").
+    /// * `postals` - Individual locations defined as postal codes (e.g. "postal_CH9000").
+    /// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
+    /// 
     /// # Examples
     /// 
     /// ```rust, no_run
@@ -374,7 +412,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     
     ///     // Create time information
     ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
@@ -404,7 +442,7 @@ impl APIClient {
         optionals: &Option<Vec<String>>,
     ) -> Result<polars::frame::DataFrame, ConnectorError> {
         // Check if there is only a single zipcode in the postals. This is important because in this
-        // case the HTTP CSV response does not contain the information about the location (-.-). To 
+        // case the HTTP "csv" response does not contain the information about the location (-.-). To 
         // produce a consistent DataFrame we need to create a postal_code column (as does the python
         // connector).
         let needs_latlon: bool = postals.len() == 1;
@@ -414,7 +452,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
-            time_series, parameters, &coords_str, optionals, &String::from("csv")
+            time_series, parameters, &coords_str, optionals, "csv"
         ).await;
 
         // Create the complete URL
@@ -451,6 +489,13 @@ impl APIClient {
     /// Download a ```polars``` DataFrame from the API for a grid of locations bounded by a 
     /// bounding box object ```BBox``` and a single parameter. 
     /// 
+    /// # Arguments
+    /// 
+    /// * `timestamp` - Date and time for the request.
+    /// * `parameter` - The name of the parameter (e.g. "t_2m:C"). 
+    /// * `bbox` - Bounding box and resolution for the grid. (["crate::location::BBox"]) 
+    /// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
+    /// 
     /// # Examples
     /// 
     /// ```rust, no_run
@@ -459,10 +504,10 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     
     ///     // Create time information
-    ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
+    ///     let date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
     /// 
     ///     // Create Parameters
     ///     let parameter = String::from("t_2m:C");
@@ -479,14 +524,14 @@ impl APIClient {
     /// 
     ///     // Call endpoint
     ///     let df_grid_piv = client.query_grid_pivoted(
-    ///         &start_date, &parameter, &bbox, &None
+    ///         &date, &parameter, &bbox, &None
     ///         )
     ///         .await
     ///         .unwrap();
     /// }
     /// ```
     pub async fn query_grid_pivoted(&self,
-        start_date: &chrono::DateTime<chrono::Utc>,
+        timestamp: &chrono::DateTime<chrono::Utc>,
         parameter: &String,
         bbox: &BBox,
         optionals: &Option<Vec<String>>,
@@ -496,7 +541,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_grid_query_specs(
-            start_date, parameter, &coords_str, optionals, &String::from("csv")
+            timestamp, parameter, &coords_str, optionals, "csv"
         ).await;
 
         // Create the complete URL
@@ -524,7 +569,14 @@ impl APIClient {
     }
 
     /// Download a ```polars``` DataFrame from the API for a grid of locations bounded by a bounding
-    /// box object ```BBox``` and an arbitray number of parameters and a unique point in time. 
+    /// box object ```BBox``` and an arbitray number of parameters and a unique point in time.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `timestamp` - Date and time for the request. 
+    /// * `parameters` - The name of the parameters (e.g. "t_2m:C", "wind_speed_10m:ms"). 
+    /// * `bbox` - Bounding box and resolution for the grid. (["crate::location::BBox"]) 
+    /// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
     /// 
     /// # Examples
     /// 
@@ -534,7 +586,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     
     ///     // Create time information
     ///     let start_date = Utc.ymd(1989, 11, 9).and_hms_micro(18, 0, 0, 0);
@@ -561,7 +613,7 @@ impl APIClient {
     /// }
     /// ```
     pub async fn query_grid_unpivoted(&self,
-        start_date: &chrono::DateTime<chrono::Utc>,
+        timestamp: &chrono::DateTime<chrono::Utc>,
         parameters: &[String],
         bbox: &BBox,
         optionals: &Option<Vec<String>>,
@@ -574,7 +626,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_grid_query_specs(
-            start_date, &params, &coords_str, optionals, &String::from("csv")
+            timestamp, &params, &coords_str, optionals, "csv"
         ).await;
 
         // Create the complete URL
@@ -602,7 +654,14 @@ impl APIClient {
     }
 
     /// Download a ```polars``` DataFrame from the API for a grid of locations bounded by a bounding
-    /// box object ```BBox``` and an arbitray number of parameters and a time series.  
+    /// box object ```BBox``` and an arbitray number of parameters and a time series. 
+    /// 
+    /// # Arguments
+    /// 
+    /// * `time_series` - Defines the temporal extent (time and date of start and a timedelta).
+    /// * `parameters` - Names of individual parameters (e.g. "t_2m:C" or "wind_speed_10m:ms"). 
+    /// * `bbox` - Bounding box and resolution for the grid. (["crate::location::BBox"]) 
+    /// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
     /// 
     /// # Examples
     /// 
@@ -612,7 +671,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     
     ///     // Create time information
     ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
@@ -654,7 +713,7 @@ impl APIClient {
 
         // Create the query specifications (time, location, etc.)
         let query_specs = build_ts_query_specs(
-            time_series, parameters, &coords_str, optionals, &String::from("csv")
+            time_series, parameters, &coords_str, optionals, "csv"
         ).await;
 
         // Create the complete URL
@@ -684,6 +743,14 @@ impl APIClient {
     /// Download a ```NetCDF``` from the API for a grid of locations bounded by a bounding box object
     /// ```BBox``` and a single parameters and a time series.
     /// 
+    /// # Arguments
+    /// 
+    /// * `time_series` - Defines the temporal extent (time and date of start and a timedelta).
+    /// * `parameters` - Names of individual parameters (e.g. "t_2m:C" or "wind_speed_10m:ms"). 
+    /// * `bbox` - Bounding box and resolution for the grid. (["crate::location::BBox"]) 
+    /// * `file_name` - The complete name and path for the NetCDF. Intermediate directories will be created.
+    /// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
+    /// 
     /// # Examples
     /// 
     /// ```rust, no_run
@@ -692,7 +759,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     
     ///     // Create time information
     ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
@@ -769,6 +836,14 @@ impl APIClient {
     /// Download a ```PNG``` from the API for a grid of locations bounded by a bounding box object 
     /// ```BBox``` and an single parameter and a single point in time.
     /// 
+    /// # Arguments
+    /// 
+    /// * `date` - Date and time for the request.
+    /// * `parameter` - The name of the parameter (e.g. "t_2m:C"). 
+    /// * `bbox` - Bounding box and resolution for the grid. (["crate::location::BBox"]) 
+    /// * `file_name` - The complete name and path for the PNG. Intermediate directories will be created.
+    /// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
+    /// 
     /// # Examples
     /// 
     /// ```rust, no_run
@@ -777,7 +852,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     
     ///     // Create time information
     ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
@@ -849,6 +924,15 @@ impl APIClient {
     /// Download a series of ```PNG``` files from the API for a grid of locations bounded by a 
     /// bounding box object ```BBox``` and a single parameter in the form of a time series.
     /// 
+    /// # Arguments
+    /// 
+    /// * `time_series` - Defines the temporal extent (time and date of start and a timedelta).
+    /// * `parameter` - Name of individual parameter (e.g. "t_2m:C"). 
+    /// * `bbox` - Bounding box and resolution for the grid. (["crate::location::BBox"]) 
+    /// * `prefix_path` - The complete name and path for the PNGs. Intermediate directories will be created.
+    /// And individual files will contain the specified `prefix_path` as well as a timestamp.
+    /// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
+    /// 
     /// # Examples
     /// 
     /// ```rust, no_run
@@ -857,7 +941,7 @@ impl APIClient {
     /// 
     /// #[tokio::main] 
     /// async fn main() {
-    ///     let client = APIClient::new("ferris_loves_rustaceans".to_string(), "0123456789".to_string(), 10);
+    ///     let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     ///     
     ///     // Create time information
     ///     // 1989-11-09 19:00:00 --> 18:00:00 UTC
@@ -937,8 +1021,8 @@ mod tests {
         let api_key = "test_password".to_string();
         let api_user = "test_user".to_string();
         let api_client = APIClient::new(
-            api_user,
-            api_key,
+            &api_user,
+            &api_key,
             10,
         );
 

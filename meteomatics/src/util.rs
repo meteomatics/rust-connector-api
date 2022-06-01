@@ -20,8 +20,13 @@ use std::fmt;
 // Default API URL
 const BASE_URL: &str = "https://api.meteomatics.com";
 
-/// Container for time series information. This allows functions to use less parameters. The parameter
-/// [`TimeSeries.timedelta`] is optional. 
+/// Container for time series information. This allows functions to use less parameters. 
+/// 
+/// # Arguments
+/// 
+/// * `start` - Specify date and time for the start of the time series.
+/// * `end` - Specify date and time for the end of the time series.
+/// * `timedelta` - Optionally used to specify the time step of the time series.
 /// 
 /// # Examples
 /// 
@@ -111,6 +116,12 @@ pub async fn extract_user_statistics(response: Response) -> std::result::Result<
 }
 
 /// Writes the HTTP response to a file. 
+/// 
+/// # Arguments
+/// 
+/// * `response` - The HTTP response object. 
+/// * `file_name` - The name for the file to be written (complete with path). 
+/// 
 pub async fn write_file(response: Response, file_name: &String) -> std::result::Result<(), ConnectorError> {
     let body = response.bytes().await?;
     let mut content = std::io::Cursor::new(body);
@@ -121,6 +132,11 @@ pub async fn write_file(response: Response, file_name: &String) -> std::result::
 }
 
 /// Creates a path if it does not already exist.
+/// 
+/// # Arguments
+/// 
+/// * `file_name` - The full path (incl. name) to a specific file. 
+/// 
 pub async fn create_path(file_name: &String) -> std::result::Result<(), ConnectorError> {
     // https://www.programming-idioms.org/idiom/212/check-if-folder-exists
     let dir: &Path = Path::new(file_name).parent().unwrap();
@@ -138,6 +154,13 @@ pub async fn create_path(file_name: &String) -> std::result::Result<(), Connecto
 }
 
 /// Creates a new DataFrame with added latitude and longitude extracted from the provided ```Point```.
+/// 
+/// # Arguments
+/// 
+/// * `df_in` - DataFrame as derived from the HTTP response, with missing columns for lat/lon
+/// * `point` - The specific point in space (with latitude and longitude) from which to extract the 
+/// lat / lon value for the column.
+/// 
 pub async fn df_add_latlon(df_in: polars::frame::DataFrame, point: &Point) -> 
 std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
     use polars::prelude::*;
@@ -154,6 +177,12 @@ std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
 }
 
 /// Creates a new DataFrame with added postal_Code extracted from the provided postal code.
+/// 
+/// # Arguments
+/// 
+/// * `df_in` - DataFrame as derived from the HTTP response, with missing a column with the postal code.
+/// * `postal` - The specific postal code for which we need to add a column.
+///
 pub async fn df_add_postal(df_in: polars::frame::DataFrame, postal: &str) -> 
 std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
     // https://docs.rs/polars/latest/polars/frame/struct.DataFrame.html#method.shape
@@ -167,8 +196,13 @@ std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
     Ok(df_out)
 }
 
-/// Convert the HTTP response body text for time series (i.e. the downloaded CSV) into a ```polars``` DataFrame. 
-/// Consumes the HTTP response.
+/// Convert the HTTP response into a [`polars::frame:DataFrame`]. Consumes the HTTP response.
+/// This is used in all cases where the API response is a tidy CSV.
+/// 
+/// # Arguments
+/// 
+/// * `response` - The HTTP response from the query to the meteomatics API.
+/// 
 pub async fn parse_response_to_df(
     response: Response,
 ) -> std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
@@ -189,7 +223,14 @@ pub async fn parse_response_to_df(
     Ok(dataframe)
 }
 
-// Converts the HTTP response into a polars DataFrame.
+/// Convert the HTTP response into a [`polars::frame:DataFrame`]. Consumes the HTTP response.
+/// This is used in cases where the API response is not a tidy CSV. For example when downloading a
+/// CSV grid for a single point the returned CSV is pivoted and not in a tidy column-oriented format.
+/// 
+/// # Arguments
+/// 
+/// * `response` - The HTTP response from the query to the meteomatics API.
+/// 
 pub async fn parse_grid_response_to_df(
     response: Response,
 ) -> std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
@@ -215,14 +256,23 @@ pub async fn parse_grid_response_to_df(
 /// format rules. Optionally parses a number of provided extra specifiers (e.g. 'model=mix'). The
 /// dates are formatted according to ISO8601 (<https://en.wikipedia.org/wiki/ISO_8601>). The format
 /// parameter specifies the requested file type (e.g. "csv" or "netcdf" or "png").
+/// 
+/// # Arguments
+/// 
+/// * `time_series` - Defines the temporal extent (time and date of start and a timedelta).
+/// * `parameters` - Names of individual parameters (e.g. "t_2m:C", "wind_speed_10m:ms"). 
+/// * `coords_str` - Specifies the locations for the API (formatted according to the API rules, e.g.
+/// '47.0,8+46.5,9')
+/// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
+/// * `format` - Specifies the file format for the request (e.g. "csv" or "netcdf")
+/// 
 pub async fn build_ts_query_specs(
     time_series: &TimeSeries,
     parameters: &[String],
     coords_str: &str,
     optionals: &Option<Vec<String>>,
-    format: &String,
+    format: &str,
 ) -> String {
-
     let query_specs = format!(
         "{}/{}/{}/{}",
         time_series,
@@ -250,16 +300,26 @@ pub async fn build_ts_query_specs(
 /// format rules. Optionally parses a number of provided extra specifiers (e.g. 'model=mix'). The
 /// date is formatted according to ISO8601 (<https://en.wikipedia.org/wiki/ISO_8601>). The format
 /// parameter specifies the requested file type (e.g. "csv" or "netcdf" or "png").
+/// 
+/// # Arguments
+/// 
+/// * `timestamp` - Date and time for the request.
+/// * `parameter` - Name of an individual parameter (e.g. "t_2m:C" or "wind_speed_10m:ms"). 
+/// * `coords_str` - Specifies the locations for the API (formatted according to the API rules, e.g.
+/// '47.0,8+46.5,9')
+/// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
+/// * `format` - Specifies the file format for the request (e.g. "csv" or "netcdf")
+/// 
 pub async fn build_grid_query_specs(
-    start_date: &chrono::DateTime<chrono::Utc>,
+    timestamp: &chrono::DateTime<chrono::Utc>,
     parameter: &String,
     coords_str: &str,
     optionals: &Option<Vec<String>>,
-    format: &String,
+    format: &str,
 ) -> String {
     let query_specs = format!(
         "{}/{}/{}/{}",
-        start_date.to_rfc3339(),
+        timestamp.to_rfc3339(),
         parameter,
         coords_str,
         format
@@ -284,6 +344,16 @@ pub async fn build_grid_query_specs(
 /// API format rules. Optionally parses a number of provided extra specifiers (e.g. 'model=mix'). The
 /// dates are formatted according to ISO8601 (<https://en.wikipedia.org/wiki/ISO_8601>). The format
 /// parameter specifies the requested file type (e.g. "csv" or "netcdf" or "png").
+/// 
+///  # Arguments
+/// 
+/// * `time_series` - Defines the temporal extent (time and date of start and a timedelta).
+/// * `parameter` - Name of an individual parameter (e.g. "t_2m:C" or "wind_speed_10m:ms"). 
+/// * `coords_str` - Specifies the locations for the API (formatted according to the API rules, e.g.
+/// '47.0,8+46.5,9')
+/// * `format` - Specifies the file format for the request (e.g. "csv" or "netcdf")
+/// * `optionals` - Optional parameters for the request (e.g. "calibrated=true").
+/// 
 pub async fn build_grid_ts_query_specs(
     time_series: &TimeSeries,
     parameter: &String,
@@ -316,6 +386,13 @@ pub async fn build_grid_ts_query_specs(
 
 /// This query is used to get information about lightning in a defined area and over a certain amount
 /// of time (defined by ```start_date``` and ```end_date```).
+/// 
+/// # Arguments
+/// 
+/// * `time_series` - Defines the temporal extent (time and date of start and a timedelta).
+/// * `coords_str` - Specifies the locations for the API (formatted according to the API rules, e.g.
+/// '47.0,8+46.5,9')
+/// 
 pub async fn build_grid_ts_lightning_query_specs(
     time_series: &TimeSeries,
     coords_str: &str
@@ -330,6 +407,14 @@ pub async fn build_grid_ts_lightning_query_specs(
 }
 
 /// Creates the query specs for the route query type.
+/// 
+/// # Arguments
+/// 
+/// * `dates` - These dates specify the points in time for the respective locations. 
+/// * `parameters` - Names of individual parameters (e.g. "t_2m:C" or "wind_speed_10m:ms").
+/// * `coords_str` - Specifies the locations for the API (formatted according to the API rules, e.g.
+/// '47.0,8+46.5,9')
+/// 
 pub async fn build_route_query_specs(
     dates: &str,
     parameters: &str,

@@ -59,8 +59,8 @@
 //! #[tokio::main]
 //! async fn main(){
 //!     // Credentials
-//!     let api_key = String::from("my_password");
-//!     let api_user = String::from("my_username");
+//!     let api_key = "my_password";
+//!     let api_user = "my_username";
 //! 
 //!     // Create client
 //!     let client = APIClient::new(
