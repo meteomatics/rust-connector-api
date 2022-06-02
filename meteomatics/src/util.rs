@@ -1,7 +1,7 @@
 //! # Util
 //! This module bundles different utilities for the client. It should not be necessary to access these
 //! tools outside the client. They are mainly grouped into utilities for de- and serialization of JSON
-//! HTTP responses, the creation of ```polars::frame::DataFrame``` objects from CSV HTTP responses and
+//! HTTP responses, the creation of [`DataFrame`](polars::frame::DataFrame) objects from CSV HTTP responses and
 //! some modifications of the created DataFrames. Lastly there are some utilities for the creation of
 //! PNG and NetCDF files based on the HTTP response.
 
@@ -196,7 +196,7 @@ std::result::Result<polars::frame::DataFrame, polars::error::PolarsError> {
     Ok(df_out)
 }
 
-/// Convert the HTTP response into a [`polars::frame:DataFrame`]. Consumes the HTTP response.
+/// Convert the HTTP response into a [`DataFrame`](polars::frame::DataFrame). Consumes the HTTP response.
 /// This is used in all cases where the API response is a tidy CSV.
 /// 
 /// # Arguments
@@ -223,7 +223,7 @@ pub async fn parse_response_to_df(
     Ok(dataframe)
 }
 
-/// Convert the HTTP response into a [`polars::frame:DataFrame`]. Consumes the HTTP response.
+/// Convert the HTTP response into a [`DataFrame`](polars::frame::DataFrame). Consumes the HTTP response.
 /// This is used in cases where the API response is not a tidy CSV. For example when downloading a
 /// CSV grid for a single point the returned CSV is pivoted and not in a tidy column-oriented format.
 /// 
