@@ -11,8 +11,7 @@
 //! to work with API credentials as you will never accidentally commit/push your credentials.
 
 use chrono::{Utc, Duration};
-use rust_connector_api::APIClient;
-use rust_connector_api::location::BBox;
+use rust_connector_api::{APIClient, BBox, TimeSeries};
 use rust_connector_api::errors::ConnectorError;
 use std::env;
 use dotenv::dotenv;
@@ -25,7 +24,7 @@ async fn main(){
     let u_name: String = env::var("METEOMATICS_USER").unwrap();
 
     // Create Client
-    let api: APIClient = APIClient::new(u_name,u_pw,10);
+    let api: APIClient = APIClient::new(&u_name, &u_pw, 10);
 
     // Define the name of the file
     let file_name = String::from("switzerland_t_2m_C.nc");
@@ -47,8 +46,11 @@ async fn main(){
 async fn example_request(api: &APIClient, file_name: &String) -> std::result::Result<(), ConnectorError>{
     // Time series definition
     let start_date = Utc::now();
-    let end_date = start_date + Duration::days(1);
-    let interval = Duration::hours(1);
+    let time_series = TimeSeries {
+        start: start_date,
+        end: start_date + Duration::days(1),
+        timedelta: Option::from(Duration::hours(1))
+    };
 
     // Location definition
     let ch: BBox = BBox {
@@ -69,7 +71,7 @@ async fn example_request(api: &APIClient, file_name: &String) -> std::result::Re
 
     // Download the NetCDF
     let result = api.query_netcdf(
-        &start_date, &end_date, &interval, &t_2m, &ch, file_name, &optionals
+        &time_series, &t_2m, &ch, file_name, &optionals
     ).await;
 
     result
