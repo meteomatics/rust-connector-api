@@ -1,16 +1,13 @@
-//! # NetCDF Query 
-//! NetCDF queries allow you to request a time series of  weather and climate data for cells in a 
+//! # PNG Grid Query 
+//! PNG grid queries allow you to request an image of weather and climate data for cells in a 
 //! rectangular grid, where the grid is defined by a bounding box. The bounding box or [`BBox`](`rust_connector_api::BBox`) is
 //! defined by the upper left (i.e. North Western) corner and lower right(i.e. South Eastern) corner). 
 //! The cell size in turn is defined either in pixels (```res_lat=400``` = 400 pixel heigh cells) or
-//! in degrees (e.g. ```res_lat=0.1```= 0.1° or about 1 km at the equator). 
+//! in degrees (e.g. ```res_lat=0.1```= 0.1° or about 7 km at the equator). 
 //! 
 //!# The Example
 //! The example demonstrates how to request current temperature and precipitation data for Switzerland. 
-//! The grid is spaced in 0.1 ° (or about 1 km cell width and cell height). Since we are using the
-//! NetCDF query we can request a time series. For this we use the [`TimeSeries`](`rust_connector_api::TimeSeries`),
-//! where we specify time and date of the start and end of the time series together with information 
-//! about the temporal spacing (i.e. the distance between consecutive points in time).
+//! The grid is spaced in 0.1 ° (or about 7 km cell width and cell height).
 //! There are several optional parameters you can pass to the meteomatics API that will change the 
 //! data you get back. In the example we specify that we would like to receive the parameters based 
 //! on the mix ```model = String::from("model=mix");```. The Meteomatics Mix combines different model
@@ -22,8 +19,8 @@
 //! Check out <https://www.meteomatics.com/en/request-business-wather-api-package/> to request an 
 //! API package.
 
-use chrono::{Utc, Duration};
-use rust_connector_api::{APIClient, BBox, TimeSeries};
+use chrono::{Utc};
+use rust_connector_api::{APIClient, BBox};
 use rust_connector_api::errors::ConnectorError;
 
 #[tokio::main]
@@ -32,18 +29,9 @@ async fn main(){
     let api: APIClient = APIClient::new("rust-community", "5GhAwL3HCpFB", 10);
 
     // Define the name of the file
-    let file_name = String::from("switzerland_t_2m_C.nc");
+    let file_name = String::from("switzerland_t_2m_C.png");
 
     example_request(&api, &file_name).await.unwrap();
-
-    // Look at the NetCDF
-    let nc_file = netcdf::open(&file_name).unwrap();
-    let temp2m = &nc_file.variable("t_2m").expect("Could not find variable 't_2m");
-    // Access the slice at [0, 0, 0] and get dataset of size [1, 10, 10]
-    let temp2m_slice = temp2m.values::<f64>(Some(&[0,0,0]), Some(&[1, 10, 10])).unwrap();
-
-    // Print the query result
-    println!("{:?}", temp2m_slice);
    
 }
 
@@ -51,11 +39,6 @@ async fn main(){
 async fn example_request(api: &APIClient, file_name: &String) -> std::result::Result<(), ConnectorError>{
     // Time series definition
     let start_date = Utc::now();
-    let time_series = TimeSeries {
-        start: start_date,
-        end: start_date + Duration::days(1),
-        timedelta: Option::from(Duration::hours(1))
-    };
 
     // Location definition
     let ch: BBox = BBox {
@@ -75,8 +58,8 @@ async fn example_request(api: &APIClient, file_name: &String) -> std::result::Re
     let optionals = Option::from(vec![model_mix]);
 
     // Download the NetCDF
-    let result = api.query_netcdf(
-        &time_series, &t_2m, &ch, file_name, &optionals
+    let result = api.query_grid_png(
+        &start_date, &t_2m, &ch, file_name, &optionals
     ).await;
 
     result

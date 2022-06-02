@@ -1,32 +1,34 @@
-//! # Point Query 
-//! This is a demonstration of how to download a DataFrame for one or many locations and one or many
-//! points in time (i.e. a time series). The locations are either defined as "postal_codes" or as
-//! ```Point``` objects. Point objects contain the latitude and longitude coordinates of a location.
-//! To run the example either change ```u_name``` and ```u_pw```
-//! directly *or* create a file called ```.env``` and put the following lines in there:
-//! ```text
-//! METEOMATICS_PW=your_password
-//! METEOMATICS_USER=your_username
-//! ```
-//! Make sure to include ```.env``` in your ```.gitignore```. This is a safer variant for developers 
-//! to work with API credentials as you will never accidentally commit/push your credentials.
+//! # Time series
+//! 
+//! Time series queries allow you to request weather and climate data for specific places on the globe 
+//! defined by their latitude and longitude coordinates in a time series. You can query any number of
+//! points and any number of parameters. The respective method is [`rust_connector_api::APIClient::query_time_series`].
+//! 
+//! # The Example
+//! The example demonstrates how to request temperature and precipitation data for every hour between
+//! "now" and "tomorrow" for two places. The two places are Geneva (<https://www.geneve.ch/en>) and 
+//! Zermatt (<https://www.zermatt.ch/en>). There are several optional parameters you can pass to the
+//! meteomatics API that will change the data you get back. In the example we specify that we would 
+//! like to receive the parameters based on the mix ```model = String::from("model=mix");```. The 
+//! Meteomatics Mix combines different models and sources into an intelligent blend, such that the 
+//! best data source is chosen for each time and location. 
+//! (<https://www.meteomatics.com/en/api/request/optional-parameters/data-source/>)
+//! 
+//! # The account
+//! You can use the provided credentials or your own if you already have them. 
+//! Check out <https://www.meteomatics.com/en/request-business-wather-api-package/> to request an 
+//! API package.
 
 use chrono::{Utc, Duration};
 use rust_connector_api::{APIClient, Point, TimeSeries};
 use rust_connector_api::errors::ConnectorError;
 use polars::prelude::*;
-use std::env;
-use dotenv::dotenv;
 
 #[tokio::main]
 async fn main(){
     // Credentials
-    dotenv().ok();
-    let u_pw: String = env::var("METEOMATICS_PW").unwrap();
-    let u_name: String = env::var("METEOMATICS_USER").unwrap();
+    let api: APIClient = APIClient::new("rust-community", "5GhAwL3HCpFB", 10);
 
-    // Create Client
-    let api: APIClient = APIClient::new(&u_name, &u_pw, 10);
     let df_ts = example_request(&api).await.unwrap();
 
     // Print the query result
@@ -53,9 +55,9 @@ async fn example_request(api: &APIClient) -> std::result::Result<DataFrame, Conn
     };
 
     // Location definition
-    let p1 = Point { lat: 47.249297, lon: 9.342854 };
-    let p2 = Point { lat: 50.0, lon: 10.0 };
-    let coords = vec![p1, p2];
+    let geneva = Point { lat: 46.210565, lon: 6.143981};
+    let zermatt = Point { lat: 46.026331, lon: 7.748809 };
+    let coords = vec![geneva, zermatt];
 
     // Parameter selection
     let t_2m = String::from("t_2m:C");
@@ -63,8 +65,8 @@ async fn example_request(api: &APIClient) -> std::result::Result<DataFrame, Conn
     let params = vec![t_2m, precip_1h];
 
     // Optionals
-    let model_mix = String::from("model=mix");
-    let optionals = Option::from(vec![model_mix]);
+    let model = String::from("model=mix");
+    let optionals = Option::from(vec![model]);
     
     let result = api.query_time_series(&time_seris, &params, &coords, &optionals).await;
 
