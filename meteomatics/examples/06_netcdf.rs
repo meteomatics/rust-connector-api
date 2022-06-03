@@ -35,15 +35,6 @@ async fn main(){
     let file_name = String::from("switzerland_t_2m_C.nc");
 
     example_request(&api, &file_name).await.unwrap();
-
-    // Look at the NetCDF
-    let nc_file = netcdf::open(&file_name).unwrap();
-    let temp2m = &nc_file.variable("t_2m").expect("Could not find variable 't_2m");
-    // Access the slice at [0, 0, 0] and get dataset of size [1, 10, 10]
-    let temp2m_slice = temp2m.values::<f64>(Some(&[0,0,0]), Some(&[1, 10, 10])).unwrap();
-
-    // Print the query result
-    println!("{:?}", temp2m_slice);
    
 }
 
