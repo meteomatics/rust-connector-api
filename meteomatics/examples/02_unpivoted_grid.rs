@@ -33,7 +33,7 @@ async fn main(){
     // Create Client
     let api: APIClient = APIClient::new("rust-community", "5GhAwL3HCpFB", 10);
 
-    let df_ts = example_request(&api).await.unwrap();
+    let df_unpivoted = example_request(&api).await.unwrap();
 
     // Print the query result
     println!("{:?}", df_unpivoted);
