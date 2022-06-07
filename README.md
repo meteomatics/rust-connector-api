@@ -1,3 +1,6 @@
+Rust Connector for the [Meteomatics API](https://api.meteomatics.com/Overview.html "Documentation Overwiev")
+
+[![logo](https://static.meteomatics.com/meteomatics-logo.png)](https://www.meteomatics.com "Meteomatics - Your Experts in Weather Data Processing")
 [![Rust](https://github.com/bbuman/rust-connector-api/actions/workflows/rust.yml/badge.svg?branch=structure_revamp)](https://github.com/bbuman/rust-connector-api/actions/workflows/rust.yml)
 
 # rust-connector-api
