@@ -1,0 +1,36 @@
+name: Rust
+
+on:
+  push:
+    branches: [ main, structure_revamp ]
+  pull_request:
+    branches: [ main, structure_revamp ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Essential
+      run: |
+        sudo apt-get update
+        sudo apt install build-essential
+    # - name: HDF5
+    #   run: |
+    #     sudo apt-get update
+    #     sudo apt-get install libhdf5-serial-dev
+    - name: Build
+      working-directory: meteomatics
+      run: cargo build
+    - name: Test doc
+      working-directory: meteomatics
+      run: cargo test --doc
+    - name: Test lib
+      working-directory: meteomatics
+      run: cargo test --lib
