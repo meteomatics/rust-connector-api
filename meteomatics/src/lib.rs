@@ -1,6 +1,6 @@
-//! # Rust Meteomatics API connector: *<small>rust-connector-api<small>*
+//! # Rust Meteomatics API connector: *<small>meteomatics<small>*
 //! 
-//! ```rust-connector-api``` is a native rust library that presents an easy interface for various types
+//! ```meteomatics``` is a native rust library that presents an easy interface for various types
 //! of queries to the Meteomatics weather and climate API (<https://www.meteomatics.com/en/>). The key
 //! functionality is based around the [`APIClient`] together with abstractions for location ([`Point`])
 //! and grid ([`BBox`]) information. The [`APIClient`] exposes functions that allow to asynchronously
@@ -53,7 +53,7 @@
 //! available parameters can be found here <https://www.meteomatics.com/en/api/available-parameters/alphabetic-list/>.
 //!
 //! ```rust, no_run
-//! use rust_connector_api::{APIClient, Point, TimeSeries};
+//! use meteomatics::{APIClient, Point, TimeSeries};
 //! use chrono::{Duration, Utc, TimeZone};
 //! 
 //! #[tokio::main]

@@ -27,7 +27,7 @@ impl APIClient {
     /// # Examples
     ///
     /// ```rust, no_run
-    /// use rust_connector_api::APIClient;
+    /// use meteomatics::APIClient;
     /// // New client with username, password and 10 second request timeout.
     /// let client = APIClient::new("ferris_loves_rustaceans", "0123456789", 10);
     /// ```
@@ -57,7 +57,7 @@ impl APIClient {
     ///
     /// ```rust, no_run
     /// use chrono::{Utc, Duration};
-    /// use rust_connector_api::APIClient;
+    /// use meteomatics::APIClient;
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -122,7 +122,7 @@ impl APIClient {
     ///
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, Point};
+    /// use meteomatics::{APIClient, Point};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -197,7 +197,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, BBox, TimeSeries};
+    /// use meteomatics::{APIClient, BBox, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -272,7 +272,7 @@ impl APIClient {
     /// 
     /// # Examples
     /// ```rust, no_run
-    /// use rust_connector_api::APIClient;
+    /// use meteomatics::APIClient;
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -314,7 +314,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, Point, TimeSeries};
+    /// use meteomatics::{APIClient, Point, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -408,7 +408,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, Point, TimeSeries};
+    /// use meteomatics::{APIClient, Point, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -500,7 +500,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, BBox};
+    /// use meteomatics::{APIClient, BBox};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -582,7 +582,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, BBox};
+    /// use meteomatics::{APIClient, BBox};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -667,7 +667,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, BBox, TimeSeries};
+    /// use meteomatics::{APIClient, BBox, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -755,7 +755,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, BBox, TimeSeries};
+    /// use meteomatics::{APIClient, BBox, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -848,7 +848,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, BBox};
+    /// use meteomatics::{APIClient, BBox};
     /// 
     /// #[tokio::main] 
     /// async fn main() {
@@ -937,7 +937,7 @@ impl APIClient {
     /// 
     /// ```rust, no_run
     /// use chrono::{Utc, Duration, TimeZone};
-    /// use rust_connector_api::{APIClient, BBox, TimeSeries};
+    /// use meteomatics::{APIClient, BBox, TimeSeries};
     /// 
     /// #[tokio::main] 
     /// async fn main() {

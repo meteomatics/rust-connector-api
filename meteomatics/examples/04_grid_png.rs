@@ -20,8 +20,8 @@
 //! API package.
 
 use chrono::{Utc};
-use rust_connector_api::{APIClient, BBox};
-use rust_connector_api::errors::ConnectorError;
+use meteomatics::{APIClient, BBox};
+use meteomatics::errors::ConnectorError;
 
 #[tokio::main]
 async fn main(){

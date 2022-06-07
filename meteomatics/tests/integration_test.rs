@@ -1,8 +1,8 @@
-use rust_connector_api::APIClient;
+use meteomatics::APIClient;
 use chrono::{Duration, Utc, prelude::*};
 use dotenv::dotenv;
 use std::env;
-use rust_connector_api::{Point, BBox, TimeSeries};
+use meteomatics::{Point, BBox, TimeSeries};
 use polars::prelude::*;
 use std::io::Cursor;
 use std::fs;

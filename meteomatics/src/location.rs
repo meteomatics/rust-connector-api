@@ -3,7 +3,7 @@
 //! A ```Point``` specifies a point in geographical space using latitude and longitude coordinates (
 //! e.g. St. Gallen main station -> 47.423, 9.370).
 //! ```rust, no_run
-//! use rust_connector_api::Point;
+//! use meteomatics::Point;
 //! 
 //! let st_gallen = Point { lat: 47.423, lon: 9.370};
 //! ````
@@ -13,7 +13,7 @@
 //! (latitude min value, longitude max value). The BBox further requires the definition of the desired
 //! output resolution of the grid (latitude resolution, longitude resolution).
 //! ```rust, no_run
-//! use rust_connector_api::BBox;
+//! use meteomatics::BBox;
 //! 
 //! let st_gallen_grid = BBox {
 //!     lat_min: 47.423,
