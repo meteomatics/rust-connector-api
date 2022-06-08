@@ -106,7 +106,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -182,7 +182,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -264,7 +264,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -297,7 +297,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -390,7 +390,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -482,7 +482,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -564,7 +564,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -649,7 +649,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -736,7 +736,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -829,7 +829,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -917,7 +917,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -1000,7 +1000,7 @@ impl APIClient {
             .basic_auth(&self.username, Some(String::from(&self.password)))
             .send()
             .await
-            .map_err(|_| ConnectorError::ReqwestError)
+            .map_err(|e| ConnectorError::ReqwestError(e.to_string()))
     }
 }
 
