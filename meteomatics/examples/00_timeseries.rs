@@ -20,8 +20,8 @@
 //! API package.
 
 use chrono::{Utc, Duration};
-use rust_connector_api::{APIClient, Point, TimeSeries};
-use rust_connector_api::errors::ConnectorError;
+use meteomatics::{APIClient, Point, TimeSeries};
+use meteomatics::errors::ConnectorError;
 use polars::prelude::*;
 
 #[tokio::main]

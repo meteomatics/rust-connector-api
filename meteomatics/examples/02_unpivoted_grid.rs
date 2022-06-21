@@ -22,8 +22,8 @@
 //! API package.
 
 use chrono::{Utc};
-use rust_connector_api::{APIClient, BBox};
-use rust_connector_api::errors::ConnectorError;
+use meteomatics::{APIClient, BBox};
+use meteomatics::errors::ConnectorError;
 use polars::prelude::*;
 
 // Demonstrates how to use the rust connector to query the Meteomatics API for gridded data. Also 

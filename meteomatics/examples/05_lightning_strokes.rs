@@ -14,8 +14,8 @@
 
 
 use chrono::{Utc, Duration};
-use rust_connector_api::{APIClient, BBox, TimeSeries};
-use rust_connector_api::errors::ConnectorError;
+use meteomatics::{APIClient, BBox, TimeSeries};
+use meteomatics::errors::ConnectorError;
 use polars::prelude::*;
 
 // Demonstrates how to use the rust connector to query the Meteomatics API for gridded data. Also 

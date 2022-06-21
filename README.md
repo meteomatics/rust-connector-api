@@ -10,13 +10,11 @@ Simply add the meteomatics crate to the dependencies of your project.
 
 # For a start we recommend to inspect and play with the examples.
 - Change to the meteomatics directory using ```cd meteomatics``` 
-- Open and inspect the documentation for the connector 
-```cargo doc --lib --no-deps --open```
-- Open and inspect the documentation for the examples 
-```cargo doc --examples --no-deps --open```
-- ```cargo run --example point_query```
-- ```cargo run --example grid_query```
-- ```cargo run --example point_query```
+- Open and inspect the documentation for the connector ```cargo doc --lib --no-deps --open```
+- Open and inspect the documentation for the examples ```cargo doc --examples --no-deps --open```
+- ```cargo run --example 00_timeseries```
+- ```cargo run --example 01_pivoted_grid```
+- ```cargo run --example 02_unpivoted_grid```
 
 # For developers
 - create a file called ```.env``` inside the repository root and add:

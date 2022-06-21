@@ -1,5 +1,5 @@
 [package]
-name = "rust-connector-api"
+name = "meteomatics"
 version = "0.2.0" # https://semver.org/
 edition = "2021"
 authors = ["Meteomatics"]
