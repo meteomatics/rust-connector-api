@@ -20,7 +20,7 @@ pub enum ConnectorError {
 
     /// Generic error.
     #[error(transparent)]
-    GenericError(#[from] Box<dyn std::error::Error>),
+    GenericError(#[from] Box<dyn std::error::Error + Send>),
 
     /// Parse error.
     #[error("Parsing error")]
