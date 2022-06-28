@@ -15,8 +15,8 @@ pub enum ConnectorError {
     LibraryError(String),
 
     /// Polars error.
-    #[error("Polars error")]
-    PolarsError,
+    #[error("Polars error: `{0}`")]
+    PolarsError(String),
 
     /// Generic error.
     #[error(transparent)]
@@ -31,12 +31,6 @@ pub enum ConnectorError {
     FileIOError
 }
 
-
-impl From<polars::error::PolarsError> for ConnectorError {
-    fn from(_: polars::error::PolarsError) -> Self {
-        ConnectorError::PolarsError
-    }
-}
 
 impl From<url::ParseError> for ConnectorError {
     fn from(_: url::ParseError) -> Self {
