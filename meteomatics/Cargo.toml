@@ -1,11 +1,12 @@
 [package]
 name = "meteomatics"
-version = "0.2.1" # https://semver.org/
+version = "0.2.2" # https://semver.org/
 edition = "2021"
 authors = ["Meteomatics"]
 description = "Query weather and climate data from the Meteomatics API (https://www.meteomatics.com/en/)"
 license = "MIT"
 homepage = "https://www.meteomatics.com/en/"
+repository = "https://github.com/meteomatics/rust-connector-api"
 readme = "README.md"
 
 [dependencies]
