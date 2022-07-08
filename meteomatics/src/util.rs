@@ -111,8 +111,11 @@ pub struct Limit{
 
 // Deserializes the response for the user_stats_json query.
 pub async fn extract_user_statistics(response: Response) -> std::result::Result<UStatsResponse, ConnectorError> {
-    let json: UStatsResponse = response.json::<UStatsResponse>().await?;
-    Ok(json)
+    match response.json::<UStatsResponse>()
+        .await {
+            Ok(json) => Ok(json),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
+        }
 }
 
 /// Writes the HTTP response to a file. 
@@ -123,7 +126,7 @@ pub async fn extract_user_statistics(response: Response) -> std::result::Result<
 /// * `file_name` - The name for the file to be written (complete with path). 
 /// 
 pub async fn write_file(response: Response, file_name: &String) -> std::result::Result<(), ConnectorError> {
-    let body = response.bytes().await?;
+    let body = response.bytes().await.map_err(|e| ConnectorError::ReqwestError(e.to_string())).unwrap();
     let mut content = std::io::Cursor::new(body);
 
     let mut file = File::create(file_name)?;

@@ -96,8 +96,8 @@ impl APIClient {
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
-                    let df = parse_response_to_df(
-                        response).await?;
+                    let df = parse_response_to_df(response).await
+                        .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                     Ok(df)
                 }
                 status => Err(ConnectorError::HttpError(
@@ -106,7 +106,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -172,8 +172,8 @@ impl APIClient {
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
-                    let df = parse_response_to_df(
-                        response).await?;
+                    let df = parse_response_to_df(response).await
+                        .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                     Ok(df)
                 }
                 status => Err(ConnectorError::HttpError(
@@ -182,7 +182,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -251,11 +251,14 @@ impl APIClient {
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
-                    let mut df = parse_response_to_df(
-                        response).await?;
-                    df.rename("stroke_time:sql", "validdate")?;
-                    df.rename("stroke_lat:d", "lat")?;
-                    df.rename("stroke_lon:d", "lon")?;
+                    let mut df = parse_response_to_df(response).await
+                        .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
+                    df.rename("stroke_time:sql", "validdate")
+                        .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
+                    df.rename("stroke_lat:d", "lat")
+                        .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
+                    df.rename("stroke_lon:d", "lon")
+                        .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                     Ok(df)
                 }
                 status => Err(ConnectorError::HttpError(
@@ -264,7 +267,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -297,7 +300,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -374,13 +377,14 @@ impl APIClient {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
                     if needs_latlon {
-                        let df = parse_response_to_df(
-                            response).await?;
-                        let df = df_add_latlon(df, coordinates.get(0).unwrap()).await?;
+                        let df = parse_response_to_df(response).await
+                            .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
+                        let df = df_add_latlon(df, coordinates.get(0).unwrap()).await
+                            .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                         Ok(df)
                     } else {
-                        let df = parse_response_to_df(
-                            response).await?;
+                        let df = parse_response_to_df(response).await
+                            .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                         Ok(df)
                     }
                 }
@@ -390,7 +394,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -466,13 +470,14 @@ impl APIClient {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
                     if needs_latlon {
-                        let df = parse_response_to_df(
-                            response).await?;
-                        let df = df_add_postal(df, postals.get(0).unwrap()).await?;
+                        let df = parse_response_to_df(response).await
+                            .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
+                        let df = df_add_postal(df, postals.get(0).unwrap()).await
+                            .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                         Ok(df)
                     } else {
-                        let df = parse_response_to_df(
-                            response).await?;
+                        let df = parse_response_to_df(response).await
+                            .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                         Ok(df)
                     }
                 }
@@ -482,7 +487,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -554,8 +559,8 @@ impl APIClient {
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
-                    let df = parse_grid_response_to_df(
-                        response).await?;
+                    let df = parse_grid_response_to_df(response).await
+                        .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                     Ok(df)
                 }
                 status => Err(ConnectorError::HttpError(
@@ -564,7 +569,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -639,8 +644,8 @@ impl APIClient {
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
-                    let df = parse_response_to_df(
-                        response).await?;
+                    let df = parse_response_to_df(response).await
+                        .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                     Ok(df)
                 }
                 status => Err(ConnectorError::HttpError(
@@ -649,7 +654,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -726,8 +731,8 @@ impl APIClient {
         match result {
             Ok(response) => match response.status() {
                 StatusCode::OK => {
-                    let df = parse_response_to_df(
-                        response).await?;
+                    let df = parse_response_to_df(response).await
+                        .map_err(|e| ConnectorError::PolarsError(e.to_string()))?;
                     Ok(df)
                 }
                 status => Err(ConnectorError::HttpError(
@@ -736,7 +741,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -829,7 +834,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -917,7 +922,7 @@ impl APIClient {
                     status,
                 )),
             },
-            Err(_) => Err(ConnectorError::ReqwestError),
+            Err(e) => Err(ConnectorError::ReqwestError(e.to_string())),
         }
     }
 
@@ -1000,7 +1005,7 @@ impl APIClient {
             .basic_auth(&self.username, Some(String::from(&self.password)))
             .send()
             .await
-            .map_err(|_| ConnectorError::ReqwestError)
+            .map_err(|e| ConnectorError::ReqwestError(e.to_string()))
     }
 }
 
